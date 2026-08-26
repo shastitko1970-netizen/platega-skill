@@ -4,14 +4,14 @@ description: "Use when integrating or debugging the Platega payment API (platega
 license: MIT
 metadata:
   author: community
-  version: "1.0.0"
+  version: "1.1.0"
   source: "https://docs.platega.io/"
   last_read: "2026-08-26"
 ---
 
 # Platega.io API
 
-Reference skill for the Platega merchant API. Do not invent endpoints, fields, or statuses. If docs.platega.io and GitBook diverge, document both and mark the source. Full schemas live in `references/`.
+Reference skill for the Platega merchant API. Version **1.1.0**. Do not invent endpoints, fields, or statuses. If docs.platega.io and GitBook diverge, document both and mark the source. Full schemas live in `references/`.
 
 **Base URL (official):** `https://app.platega.io/`
 
@@ -34,6 +34,8 @@ Reference skill for the Platega merchant API. Do not invent endpoints, fields, o
 | GitBook: client `id`, methods 1–10, EXPIRED/FAILED, H2H requisites | [references/legacy-gitbook.md](references/legacy-gitbook.md) |
 | OpenAPI field schemas | [references/schemas.md](references/schemas.md) |
 | Payout signing CLI | [scripts/payout_sign.py](scripts/payout_sign.py) |
+| Edge-case scenarios (antifraud, H2H, subscriptions) | [references/scenarios.md](references/scenarios.md) |
+| Prompt → agent with skill / without | [references/examples.md](references/examples.md) |
 
 ## Auth (short)
 
@@ -96,10 +98,12 @@ Not in current llms.txt (mark extra/legacy): `GET /rates/payment_method_rate`, `
 
 ## Scenarios
 
-1. **Payment with a method.** `POST /transaction/process` with `paymentMethod` ∈ {2,3,11,12,13,14}. **Do not send `id`.** Redirect the payer to `redirect`. Wait for callback or poll `GET /transaction/{id}`.
-2. **Hosted page, no method.** `POST /v2/transaction/process` without `paymentMethod`. Redirect to `url`.
-3. **H2H.** Create transaction → `GET /h2h/{id}` → `{amount, qr}` (current docs). Manager enables H2H.
-4. **Subscription.** Same `POST /transaction/process`, but `paymentMethod: 6` + `interval` + `intervalCount`. `transactionId` = `subscriptionId`. No money on create. 30 minutes to bind, else `Failed`. Charge callback: PascalCase + `SubscriptionId` + `NextChargeAt`.
+Happy paths below. Edge cases (antifraud `metadata`, H2H, subscriptions) — [references/scenarios.md](references/scenarios.md). Prompt → agent with/without skill — [references/examples.md](references/examples.md).
+
+1. **Payment with a method.** `POST /transaction/process` with `paymentMethod` ∈ {2,3,11,12,13,14}. **Do not send `id`.** If the manager said this shop needs antifraud, send `metadata.userId` (+ `userName`) on create. Redirect the payer to `redirect`. Wait for callback or poll `GET /transaction/{id}`.
+2. **Hosted page, no method.** `POST /v2/transaction/process` without `paymentMethod`. Redirect to `url` (not `redirect`).
+3. **H2H.** Manager enables the mode first. Create a transaction (usually SBP `2`) → `GET /h2h/{id}` → current docs: `{amount, qr}`. Do not expect GitBook card-requisite fields.
+4. **Subscription.** Same `POST /transaction/process`, but `paymentMethod: 6` + `interval` + `intervalCount`. `transactionId` = `subscriptionId`. No money on create. 30 minutes to bind, else `Failed`. Charge callback: PascalCase + `SubscriptionId` + `NextChargeAt`. Charge `CANCELED` → `PastDue`, provider does not retry.
 5. **Refund.** `GET .../cancel-supported` (needs USDT or RUB balance) → `POST .../cancel`. Possible `accepted: false` + `manualControlRequired: true`.
 6. **Payout.** Opt-in. Sign the body byte-for-byte (`separators=(",", ":")`), `data=` not `json=`. New `Idempotency-Key` for every new payout. `amountRub` 1000…87500. `cardId` XOR `cardNumber`.
 

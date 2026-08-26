@@ -2,6 +2,8 @@
 
 Неофициальный community skill для [Platega.io](https://platega.io) — платёжного API (СБП/QR, эквайринг, крипто, подписки, возвраты, HMAC-выводы).
 
+Версия skill: **1.1.0** ([CHANGELOG.md](CHANGELOG.md)).
+
 Skill написан в формате [Agent Skills](https://agentskills.io/specification): агент читает `skills/platega/SKILL.md`, затем точечно подгружает `references/*.md`. Это **справочный** skill (документация API), не дисциплинарный.
 
 **Источник истины:** [https://docs.platega.io/](https://docs.platega.io/) и [https://docs.platega.io/llms.txt](https://docs.platega.io/llms.txt). Последнее чтение: **2026-08-26**.
@@ -10,7 +12,16 @@ Skill написан в формате [Agent Skills](https://agentskills.io/spe
 
 Старший GitBook ([platega-io.gitbook.io](https://platega-io.gitbook.io/platega.io-api-dokumentaciya/)) конфликтует с текущими docs — см. `skills/platega/references/legacy-gitbook.md`. Context7 когда-то показывал `api.platega.io`; официальный base URL — `https://app.platega.io/`.
 
+
 ---
+
+## Why this skill / Зачем skill
+
+Platega has two doc layers (current Apidog and older GitBook) and they **disagree**: client `id` on create, methods 1–10 vs 2/3/11–14, H2H as card requisites vs QR, subscriptions as the same `POST /transaction/process` with `paymentMethod: 6`. An agent without the skill almost always mixes the layers.
+
+Worked examples (prompt → without skill / with skill): [skills/platega/references/examples.md](skills/platega/references/examples.md).
+
+Edge cases (antifraud `metadata`, H2H, subscriptions): [skills/platega/references/scenarios.md](skills/platega/references/scenarios.md).
 
 ## Установка
 
@@ -92,10 +103,12 @@ skills/platega/
   references/cms-sdks.md
   references/legacy-gitbook.md
   references/schemas.md
+  references/scenarios.md
+  references/examples.md
   scripts/payout_sign.py   # HMAC-подписчик Payout API (без секретов)
 ```
 
-Покрытие официального каталога: [COVERAGE.md](COVERAGE.md).
+Покрытие официального каталога: [COVERAGE.md](COVERAGE.md). История версий: [CHANGELOG.md](CHANGELOG.md).
 
 ---
 
