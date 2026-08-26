@@ -1,23 +1,23 @@
-# CMS-модули и SDK
+# CMS modules and SDKs
 
-Официально (docs.platega.io, 2026-08-26):
+Official (docs.platega.io, 2026-08-26):
 
-- [Модули CMS](https://docs.platega.io/модули-cms-1991884m0.md)
+- [CMS modules](https://docs.platega.io/модули-cms-1991884m0.md)
 - [SDK](https://docs.platega.io/sdk-1991993m0.md)
 
-Тексты страниц: «Для быстрой интеграции с нашим сервисом, вы можете использовать готовые модули.» / «Для быстрой интеграции используйте SDK для популярных языков программирования.»
+Page copy: "For a faster integration with our service, you can use ready-made modules." / "For a faster integration use SDKs for popular programming languages."
 
-## CMS-модули
+## CMS modules
 
-Хост загрузок: `https://platega-modules.plategadrive.com/`
+Download host: `https://platega-modules.plategadrive.com/`
 
-Все карточки помечены «Встраиваемый модуль».
+All cards are labeled "Embeddable module".
 
-| CMS | URL файла | Имя файла как на сайте |
+| CMS | File URL | Filename on the site |
 | --- | --- | --- |
 | Simpla | https://platega-modules.plategadrive.com/Simpla.zip | `Simpla.zip` |
 | HopeBilling | https://platega-modules.plategadrive.com/HopeBilling.zip | `HopeBilling.zip` |
-| WHMCS | https://platega-modules.plategadrive.com/WHCMS.zip | **`WHCMS.zip`** (опечатка WHMCS→WHCMS в имени файла) |
+| WHMCS | https://platega-modules.plategadrive.com/WHCMS.zip | **`WHCMS.zip`** (typo WHMCS→WHCMS in the filename) |
 | DLE | https://platega-modules.plategadrive.com/DLE.zip | `DLE.zip` |
 | XenForo | https://platega-modules.plategadrive.com/XenForo.zip | `XenForo.zip` |
 | Opencart | https://platega-modules.plategadrive.com/Opencart.zip | `Opencart.zip` |
@@ -25,34 +25,34 @@
 | Joomla! (JoomShopping5) | https://platega-modules.plategadrive.com/Joomla-JoomShopping5.zip | `Joomla-JoomShopping5.zip` |
 | WooCommerce | https://platega-modules.plategadrive.com/WooCommerce.zip | `WooCommerce.zip` |
 
-Инструкций установки в официальной странице нет — только ссылки скачивания.
+The official page has no install instructions — download links only.
 
-## Официальные SDK
+## Official SDKs
 
-Хост: `https://sdk-s.plategadrive.com/`
+Host: `https://sdk-s.plategadrive.com/`
 
-| Язык | URL |
+| Language | URL |
 | --- | --- |
 | PHP SDK | https://sdk-s.plategadrive.com/platega-sdk-php.zip |
 | Python SDK | https://sdk-s.plategadrive.com/platega-sdk-python.zip |
 | Node.js SDK | https://sdk-s.plategadrive.com/platega-sdk-nodejs.zip |
 
-Карточки тоже подписаны «Встраиваемый модуль». Состав zip и API-покрытие на странице не описаны.
+Cards are also labeled "Embeddable module". Zip contents and API coverage are not described on the page.
 
-## Community (не в llms.txt)
+## Community (not in llms.txt)
 
-Неофициальные пакеты, покрывают больше ручек, чем видно из zip-карточек. Это **не** официальные SDK.
+Unofficial packages; they cover more endpoints than the zip cards show. These are **not** official SDKs.
 
-| Пакет | Где | Заметки |
+| Package | Where | Notes |
 | --- | --- | --- |
 | `aioplatega` | [PyPI](https://pypi.org/project/aioplatega/), [GitHub](https://github.com/DOFER998/aioplatega) | Async Python (aiohttp, Pydantic v2). Docs: https://DOFER998.github.io/aioplatega/ |
 | `platega` | PyPI / GitHub komarukomaru | Sync+async, webhooks |
 | `plategaio` | PyPI / GitHub ploki1337 | Async httpx |
 
-При конфликте поведения SDK vs docs.platega.io — верить docs.
+On SDK vs docs.platega.io behavior conflict — trust docs.
 
-## Когда что брать
+## What to pick
 
-- CMS-магазин из таблицы — сначала официальный zip.
-- Свой бэкенд PHP/Python/Node — официальный zip SDK, сверять с текущими docs (подписки, HMAC payouts, v2 process могли появиться позже zip).
-- Нужны подписки / payout HMAC / export — читай reference этого skill и/или community SDK, не предполагай, что официальный zip всё умеет.
+- CMS store from the table — official zip first.
+- Own PHP/Python/Node backend — official zip SDK, check against current docs (subscriptions, HMAC payouts, v2 process may post-date the zip).
+- Need subscriptions / payout HMAC / export — read this skill's references and/or a community SDK; do not assume the official zip covers everything.

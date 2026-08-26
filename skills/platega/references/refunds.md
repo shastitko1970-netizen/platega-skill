@@ -1,47 +1,47 @@
-# Возвраты (отмена транзакции)
+# Refunds (transaction cancel)
 
-Официально (docs.platega.io, 2026-08-26):
+Official (docs.platega.io, 2026-08-26):
 
-- [Проверка возможности отмены транзакции](https://docs.platega.io/проверка-возможности-отмены-транзакции-38219023e0.md)
-- [Отмена транзакции](https://docs.platega.io/отмена-транзакции-38225949e0.md)
+- [Check whether a transaction can be cancelled](https://docs.platega.io/проверка-возможности-отмены-транзакции-38219023e0.md)
+- [Cancel a transaction](https://docs.platega.io/отмена-транзакции-38225949e0.md)
 
-Base: `https://app.platega.io/`  
-Auth: `X-MerchantId` + `X-Secret` (модель 1, не payout HMAC).
+Base: `https://app.platega.io/`
+Auth: `X-MerchantId` + `X-Secret` (model 1, not payout HMAC).
 
-Порядок: сначала `GET /transaction/{id}/cancel-supported`, затем `POST /transaction/{id}/cancel`.
+Order: first `GET /transaction/{id}/cancel-supported`, then `POST /transaction/{id}/cancel`.
 
-Для `supported: true` на одном из балансов мерчанта (**USDT или RUB**) должно быть достаточно средств на сумму возврата.
+For `supported: true`, one of the merchant balances (**USDT or RUB**) must have enough funds for the refund amount.
 
-После успешного возврата платежный callback (проза) несёт статус **CHARGEBACKED**.
+After a successful refund the payment callback (prose) carries status **CHARGEBACKED**.
 
 ---
 
 ## GET `/transaction/{id}/cancel-supported`
 
-Возвращает, доступна ли отмена, и какую сумму в USDT спишут с баланса.
+Returns whether cancel is available and how much USDT will be deducted from the balance.
 
-### Параметры
+### Parameters
 
-| Имя | In | Required | Заметки |
+| Name | In | Required | Notes |
 | --- | --- | --- | --- |
-| `id` | path | да | ID транзакции |
-| `accept` | header | да в OpenAPI | example: `text/plain` |
-| `X-MerchantId` | header | да | |
-| `X-Secret` | header | да | |
+| `id` | path | yes | transaction ID |
+| `accept` | header | yes in OpenAPI | example: `text/plain` |
+| `X-MerchantId` | header | yes | |
+| `X-Secret` | header | yes | |
 
-В официальном example OpenAPI присутствуют конкретные значения MerchantId/Secret — **не копировать в код и репозиторий**, это образцы спецификации.
+The official OpenAPI example includes concrete MerchantId/Secret values — **do not copy them into code or the repo**, they are spec samples.
 
-### Ответ 200
+### 200 response
 
-| Поле | Тип | Required | Описание |
+| Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| `supported` | boolean | да | `true` — отмена доступна и баланс достаточен; `false` — невозможна |
-| `totalDeductUsdt` | number | да | Итоговая сумма в USDT, которая будет списана с баланса |
-| `penaltyNativeAmount` | number | нет | |
-| `penaltyNativeCurrency` | string | нет | Валюта штрафа (RUB, EUR и т.д.) |
-| `penaltyUsdt` | number | да | |
-| `penaltyConversionRate` | number | нет | Курс конвертации при расчёте штрафа |
-| `blockReason` | string | нет | Причина блокировки, если `supported: false` по балансу. Например: `"Insufficient funds"` |
+| `supported` | boolean | yes | `true` — cancel is available and balance is sufficient; `false` — not possible |
+| `totalDeductUsdt` | number | yes | Total USDT amount that will be deducted from the balance |
+| `penaltyNativeAmount` | number | no | |
+| `penaltyNativeCurrency` | string | no | Penalty currency (RUB, EUR, etc.) |
+| `penaltyUsdt` | number | yes | |
+| `penaltyConversionRate` | number | no | Conversion rate used for the penalty |
+| `blockReason` | string | no | Block reason if `supported: false` due to balance. E.g. `"Insufficient funds"` |
 
 ```json
 {
@@ -55,37 +55,37 @@ Auth: `X-MerchantId` + `X-Secret` (модель 1, не payout HMAC).
 }
 ```
 
-Других HTTP-кодов страница не описывает.
+The page describes no other HTTP codes.
 
 ---
 
 ## POST `/transaction/{id}/cancel`
 
-Инициирует отмену и возврат средств плательщику.
+Initiates cancel and a refund to the payer.
 
-### Параметры
+### Parameters
 
-| Имя | In | Required |
+| Name | In | Required |
 | --- | --- | --- |
-| `id` | path | да |
-| `accept` | header | да в OpenAPI (example `text/plain`) |
-| `X-MerchantId` | header | да |
-| `X-Secret` | header | да |
+| `id` | path | yes |
+| `accept` | header | yes in OpenAPI (example `text/plain`) |
+| `X-MerchantId` | header | yes |
+| `X-Secret` | header | yes |
 
-Тела запроса в спецификации нет.
+No request body in the spec.
 
-### Ответ 200
+### 200 response
 
-Все четыре поля required:
+All four fields required:
 
-| Поле | Тип | Описание |
+| Field | Type | Description |
 | --- | --- | --- |
-| `transactionId` | string | Идентификатор транзакции |
-| `accepted` | boolean | Принята ли отмена. `false` означает, что требуется ручная обработка |
-| `manualControlRequired` | boolean | Если `true` — автоматическая отмена невозможна, обратиться в поддержку |
-| `message` | string | Сообщение о статусе отмены |
+| `transactionId` | string | Transaction ID |
+| `accepted` | boolean | Whether cancel was accepted. `false` means manual handling is required |
+| `manualControlRequired` | boolean | If `true` — automatic cancel is impossible, contact support |
+| `message` | string | Cancel status message |
 
-Официальный example — как раз «не автоматом»:
+Official example is the "not automatic" case:
 
 ```json
 {
@@ -96,13 +96,13 @@ Auth: `X-MerchantId` + `X-Secret` (модель 1, не payout HMAC).
 }
 ```
 
-`accepted: false` + `manualControlRequired: true` — штатный документированный исход, не обязательно баг клиента.
+`accepted: false` + `manualControlRequired: true` is a documented outcome, not necessarily a client bug.
 
-Других HTTP-кодов страница не описывает.
+The page describes no other HTTP codes.
 
 ---
 
-## Пример вызова
+## Call example
 
 ```http
 GET /transaction/71f1375c-ba7a-4e9d-84a5-452f3f9cf4c3/cancel-supported HTTP/1.1
@@ -120,6 +120,6 @@ X-MerchantId: <MerchantId>
 X-Secret: <X-Secret>
 ```
 
-Проверяй баланс через `GET /balance/all` ([reporting.md](reporting.md)), если `supported: false` и `blockReason` про insufficient funds.
+Check balance via `GET /balance/all` ([reporting.md](reporting.md)) if `supported: false` and `blockReason` is about insufficient funds.
 
-Не путать с `POST /subscription/{id}/cancel` — это остановка будущих списаний подписки, не возврат платежа.
+Do not confuse with `POST /subscription/{id}/cancel` — that stops future subscription charges, it is not a payment refund.

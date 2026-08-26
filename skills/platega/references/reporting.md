@@ -1,36 +1,36 @@
-# Отчёты, балансы, курсы
+# Reports, balances, rates
 
-Официально в llms.txt (docs.platega.io, 2026-08-26):
+Official in llms.txt (docs.platega.io, 2026-08-26):
 
-- [Получение балансов](https://docs.platega.io/получение-балансов-33582950e0.md) — `GET /balance/all`
-- [Выгрузка транзакций в CSV](https://docs.platega.io/выгрузка-транзакций-в-csv-37963792e0.md)
-- [Выгрузка транзакций в Excel](https://docs.platega.io/выгрузка-транзакций-в-excel-37963794e0.md)
-- [Выгрузка транзакций в Json](https://docs.platega.io/выгрузка-транзакций-в-json-37991987e0.md)
+- [Get balances](https://docs.platega.io/получение-балансов-33582950e0.md) — `GET /balance/all`
+- [Export transactions to CSV](https://docs.platega.io/выгрузка-транзакций-в-csv-37963792e0.md)
+- [Export transactions to Excel](https://docs.platega.io/выгрузка-транзакций-в-excel-37963794e0.md)
+- [Export transactions to Json](https://docs.platega.io/выгрузка-транзакций-в-json-37991987e0.md)
 
-Auth для всех официальных ручек ниже: `X-MerchantId` + `X-Secret`. Base: `https://app.platega.io/`.
+Auth for all official endpoints below: `X-MerchantId` + `X-Secret`. Base: `https://app.platega.io/`.
 
 ---
 
 ## GET `/balance/all`
 
-Описание: «Получение балансов».
+Description: "Get balances".
 
-### Заголовки
+### Headers
 
 | Header | Required | Schema |
 | --- | --- | --- |
-| `X-MerchantId` | да | uuid |
-| `X-Secret` | да | string |
+| `X-MerchantId` | yes | uuid |
+| `X-Secret` | yes | string |
 
-### Ответ 200
+### 200 response
 
-Массив объектов:
+Array of objects:
 
-| Поле | Тип | Required | Описание |
+| Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| `amount` | number | да | |
-| `currency` | string | да | example: `RUB`, `USDT` |
-| `frozenBalance` | integer | нет | в example есть у USDT |
+| `amount` | number | yes | |
+| `currency` | string | yes | example: `RUB`, `USDT` |
+| `frozenBalance` | integer | no | present on USDT in the example |
 
 ```json
 [
@@ -46,17 +46,17 @@ Auth для всех официальных ручек ниже: `X-MerchantId` 
 ]
 ```
 
-Нужен для возвратов: `cancel-supported` требует достаточный USDT **или** RUB.
+Needed for refunds: `cancel-supported` requires sufficient USDT **or** RUB.
 
-Других HTTP-кодов страница не описывает.
+The page describes no other HTTP codes.
 
 ---
 
-## Общий фильтр выгрузок
+## Shared export filter
 
-Три export-ручки принимают одно и то же JSON-тело. Все поля в схеме optional (required не задан).
+The three export endpoints take the same JSON body. All schema fields are optional (required is unset).
 
-| Поле | Тип | Example |
+| Field | Type | Example |
 | --- | --- | --- |
 | `statuses` | array of string | `"6"`, `"7"` |
 | `paymentMethods` | array of string | `"2"`, `"11"` |
@@ -64,65 +64,65 @@ Auth для всех официальных ручек ниже: `X-MerchantId` 
 | `to` | string | `2026-06-16T08:50:04.820Z` |
 | `timeZoneId` | string | `UTC` |
 
-**Не маппить** `statuses: ['6','7']` на `PaymentStatus` (`PENDING` / `CANCELED` / `CONFIRMED` / `CHARGEBACKED`). Официальный маппинг чисел → enum **не опубликован**. Передавай как в спецификации. `paymentMethods` в фильтре — строковые числа методов (`"2"`, `"11"`), в JSON-ответе выгрузки `paymentMethod` приходит уже именем (`SBPQR`).
+**Do not map** `statuses: ['6','7']` onto `PaymentStatus` (`PENDING` / `CANCELED` / `CONFIRMED` / `CHARGEBACKED`). Official number → enum mapping is **unpublished**. Send as in the spec. Filter `paymentMethods` are string method numbers (`"2"`, `"11"`); in the JSON export response `paymentMethod` already arrives as a name (`SBPQR`).
 
-### Общие заголовки export
+### Shared export headers
 
 | Header | Required | Example |
 | --- | --- | --- |
-| `X-MerchantId` | да | |
-| `X-Secret` | да | |
-| `accept` | нет | `text/plain` |
-| `Content-Type` | нет | `application/json` |
+| `X-MerchantId` | yes | |
+| `X-Secret` | yes | |
+| `accept` | no | `text/plain` |
+| `Content-Type` | no | `application/json` |
 
-В OpenAPI examples снова встречаются реальные-looking секреты — не копировать.
+OpenAPI examples again include real-looking secrets — do not copy them.
 
 ---
 
 ## POST `/transaction/export/csv`
 
-«Возвращает ссылку на CSV-файл с транзакциями по заданным фильтрам.»
+"Returns a link to a CSV file of transactions matching the given filters."
 
-### Ответ 200
+### 200 response
 
 ```json
 { "url": "string" }
 ```
 
-| Поле | Required |
+| Field | Required |
 | --- | --- |
-| `url` | да |
+| `url` | yes |
 
 ---
 
 ## POST `/transaction/export/excel`
 
-«Возвращает ссылку на Excel-файл с транзакциями по заданным фильтрам.»
+"Returns a link to an Excel file of transactions matching the given filters."
 
-### Ответ 200
+### 200 response
 
-Тот же объект `{ "url": "string" }`, `url` required.
+Same object `{ "url": "string" }`, `url` required.
 
 ---
 
 ## POST `/transaction/export/json`
 
-Конфликт внутри официальной страницы:
+In-page conflict on the official page:
 
-- Description: «Возвращает ссылку на Json-файл с транзакциями по заданным фильтрам.»
-- Схема ответа: **массив записей**, не `{url}`.
+- Description: "Returns a link to a Json file of transactions matching the given filters."
+- Response schema: an **array of records**, not `{url}`.
 
-По схеме и example — массив. Поле `url` в JSON-ответе **нет**.
+Per schema and example — an array. There is **no** `url` field in the JSON response.
 
-Элемент массива (все поля required в схеме):
+Array item (all fields required in the schema):
 
-| Поле | Тип | Example |
+| Field | Type | Example |
 | --- | --- | --- |
 | `recordId` | string | UUID |
-| `createdAt` | string | `2026-06-15 13:44:13` (не ISO в example) |
-| `amount` | integer в схеме; в example бывает `1150` и `1.15` | не угадывать единый тип — схема говорит integer, example содержит дробь |
+| `createdAt` | string | `2026-06-15 13:44:13` (not ISO in the example) |
+| `amount` | integer in schema; example has both `1150` and `1.15` | do not assume a single type — schema says integer, example contains a fraction |
 | `currencyCode` | string | `RUB` |
-| `status` | string | `CANCELED` (здесь уже enum-имя, не `'6'`) |
+| `status` | string | `CANCELED` (here already an enum name, not `'6'`) |
 | `paymentMethod` | string | `SBPQR` |
 | `description` | string | |
 | `payload` | string | `""` |
@@ -142,7 +142,7 @@ Auth для всех официальных ручек ниже: `X-MerchantId` 
 ]
 ```
 
-### Пример запроса (общий для csv/excel/json)
+### Request example (shared for csv/excel/json)
 
 ```http
 POST /transaction/export/json HTTP/1.1
@@ -164,13 +164,13 @@ X-Secret: <X-Secret>
 
 ---
 
-## Extra / legacy (нет в официальном llms.txt)
+## Extra / legacy (not in official llms.txt)
 
-Не использовать как текущий контракт без сверки с живыми docs. Страница конвертаций на docs.platega.io по `.md` даёт **404** (проверено 2026-08-26).
+Do not treat as the current contract without checking live docs. The conversions page on docs.platega.io returns **404** for `.md` (checked 2026-08-26).
 
 ### GET `/rates/payment_method_rate` (GitBook)
 
-Источник: [Получение курсов](https://platega-io.gitbook.io/platega.io-api-dokumentaciya/poluchenie-kursov.md) (`poluchenie-kursov.md` в дампе).
+Source: [Get rates](https://platega-io.gitbook.io/platega.io-api-dokumentaciya/poluchenie-kursov.md) (`poluchenie-kursov.md` in the dump).
 
 ```
 GET https://app.platega.io/rates/payment_method_rate
@@ -178,16 +178,16 @@ GET https://app.platega.io/rates/payment_method_rate
 
 Query:
 
-| Параметр | Тип | Описание |
+| Parameter | Type | Description |
 | --- | --- | --- |
-| `merchantId` | UUID | ID мерчанта |
-| `paymentMethod` | integer | ID платёжного метода |
-| `currencyFrom` | string | например `RUB` |
-| `currencyTo` | string | например `USDT` |
+| `merchantId` | UUID | merchant ID |
+| `paymentMethod` | integer | payment method ID |
+| `currencyFrom` | string | e.g. `RUB` |
+| `currencyTo` | string | e.g. `USDT` |
 
-Заголовки: `accept` (`text/plain` или `application/json`), `X-MerchantId`, `X-Secret`.
+Headers: `accept` (`text/plain` or `application/json`), `X-MerchantId`, `X-Secret`.
 
-Пример ответа GitBook:
+GitBook response example:
 
 ```json
 {
@@ -199,23 +199,23 @@ Query:
 }
 ```
 
-Текущий create-платёж уже возвращает `usdtRate` / `rate` в ответе — отдельный rates-эндпоинт в llms.txt отсутствует.
+Current payment create already returns `usdtRate` / `rate` in the response — a separate rates endpoint is absent from llms.txt.
 
-### GET `/transaction/balance-unlock-operations` (Context7 / старая страница docs)
+### GET `/transaction/balance-unlock-operations` (Context7 / old docs page)
 
-Источники: Context7-снимок и страница «Метод получения конвертаций» (id `24236037e0`), которой **нет** в текущем `llms.txt` и `.md` которой 404.
+Sources: Context7 snapshot and page "Get conversions method" (id `24236037e0`), which is **not** in current `llms.txt` and whose `.md` is 404.
 
-Задокументировано там:
+Documented there:
 
 | Query | Required | Example |
 | --- | --- | --- |
-| `from` | да | `2025-01-01T00:00:00Z` |
-| `to` | да | `2025-11-13T23:59:59Z` |
-| `page` | да | `1` |
-| `size` | да | `20` |
+| `from` | yes | `2025-01-01T00:00:00Z` |
+| `to` | yes | `2025-11-13T23:59:59Z` |
+| `page` | yes | `1` |
+| `size` | yes | `20` |
 
-Заголовки: `accept` (example `text/plain`), `X-MerchantId`, `X-Secret`.
+Headers: `accept` (example `text/plain`), `X-MerchantId`, `X-Secret`.
 
-Ответ 200: `application/json`, схема `object` с **пустыми** `properties` — поля записей официально не описаны.
+200 response: `application/json`, schema `object` with **empty** `properties` — record fields are not officially described.
 
-Помечать extra/legacy. Не выдумывать структуру элементов.
+Mark extra/legacy. Do not invent element structure.

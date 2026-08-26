@@ -1,79 +1,79 @@
 # Callbacks
 
-Официально (docs.platega.io, 2026-08-26):
+Official (docs.platega.io, 2026-08-26):
 
-- [Callback об изменении статуса транзакции](https://docs.platega.io/callback-об-изменении-статуса-транзакции-29209725e0.md)
+- [Callback on transaction status change](https://docs.platega.io/callback-об-изменении-статуса-транзакции-29209725e0.md)
 - [CallbackPayload](https://docs.platega.io/callbackpayload-13226220d0.md)
-- [Callback по списанию](https://docs.platega.io/callback-по-списанию-40029713e0.md)
-- [Callback по статусу подписки](https://docs.platega.io/callback-по-статусу-подписки-40030962e0.md)
+- [Charge callback](https://docs.platega.io/callback-по-списанию-40029713e0.md)
+- [Subscription status callback](https://docs.platega.io/callback-по-статусу-подписки-40030962e0.md)
 - [CallbackSubscriptionStatus](https://docs.platega.io/callbacksubscriptionstatus-16438868d0.md)
 
-GitBook: [Callback](https://platega-io.gitbook.io/platega.io-api-dokumentaciya/api-docs/callback.md), [Фейковый CallBack](https://platega-io.gitbook.io/platega.io-api-dokumentaciya/feikovyi-callback-dlya-testirovaniya-platezhei.md).
+GitBook: [Callback](https://platega-io.gitbook.io/platega.io-api-dokumentaciya/api-docs/callback.md), [Fake CallBack](https://platega-io.gitbook.io/platega.io-api-dokumentaciya/feikovyi-callback-dlya-testirovaniya-platezhei.md).
 
-Platega **вызывает ваш** endpoint. URL задаётся в ЛК: **Настройки → Callback URLs**. Это не исходящий вызов мерчанта.
+Platega **calls your** endpoint. URL is set in the cabinet: **Settings → Callback URLs**. This is not an outbound merchant call.
 
-## Общие правила доставки
+## Delivery rules
 
-Метод: **POST**, JSON-тело.
+Method: **POST**, JSON body.
 
-Заголовки от поставщика:
+Headers from the provider:
 
-| Header | Назначение |
+| Header | Purpose |
 | --- | --- |
-| `X-MerchantId` | ваш MerchantId (UUID) |
-| `X-Secret` | ваш API ключ |
+| `X-MerchantId` | your MerchantId (UUID) |
+| `X-Secret` | your API key |
 
-**Подписи тела нет.** Проверка — сравнить оба заголовка с эталоном через constant-time (`hmac.compare_digest` в Python, аналог в других языках). Не использовать `==`. Не «доверять» источнику по IP без сверки секрета.
+**No body signature.** Verify by comparing both headers to the expected values with constant-time (`hmac.compare_digest` in Python, equivalent elsewhere). Do not use `==`. Do not "trust" the source by IP without checking the secret.
 
-Проза платежного callback (docs):
+Payment callback prose (docs):
 
-- успех — **CONFIRMED**
-- неуспех — **CANCELED**
-- возврат денежных средств — **CHARGEBACKED**
+- success — **CONFIRMED**
+- failure — **CANCELED**
+- funds returned — **CHARGEBACKED**
 
-Схема `CallbackPayload` и enum поля `status` на странице callback платежа содержат только `CONFIRMED` и `CANCELED`. `CHARGEBACKED` есть в прозе и в `PaymentStatus`. Обрабатывай все три, если придёт `CHARGEBACKED`.
+The `CallbackPayload` schema and the `status` enum on the payment callback page contain only `CONFIRMED` and `CANCELED`. `CHARGEBACKED` is in the prose and in `PaymentStatus`. Handle all three if `CHARGEBACKED` arrives.
 
-Таймаут: если нет успешного ответа за **60 секунд**, запрос отменяется, затем **до 3** повторов с интервалом **5 минут**.
+Timeout: if there is no successful response within **60 seconds**, the request is cancelled, then **up to 3** retries at **5 minute** intervals.
 
-GitBook формулирует то же: «Транзакция будет отправлена повторно 3 раза, с интервалом 5 минут».
+GitBook says the same: "The transaction will be resent 3 times, at 5 minute intervals."
 
-### Требования к URL callback (только docs, не GitBook)
+### Callback URL requirements (docs only, not GitBook)
 
-- Только **HTTPS** (HTTP запрещён)
-- Только публичные IP или доменные имена
-- Корректный SSL от доверенного CA
-- Запрещены self-signed
-- Запрещены частные диапазоны: `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `127.0.0.0/8`
-- Запрещены localhost и loopback
+- **HTTPS** only (HTTP forbidden)
+- Public IPs or domain names only
+- Valid SSL from a trusted CA
+- Self-signed forbidden
+- Private ranges forbidden: `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `127.0.0.0/8`
+- localhost and loopback forbidden
 
-Отвечай **HTTP 200**, чтобы остановить ретраи.
+Respond **HTTP 200** to stop retries.
 
-## 1. Callback статуса обычного платежа
+## 1. Regular payment status callback
 
-Webhook OpenAPI: `paymentStatus`.
+OpenAPI webhook: `paymentStatus`.
 
-Заголовки `X-MerchantId`, `X-Secret` — required в этой спецификации.
+Headers `X-MerchantId`, `X-Secret` are required in this spec.
 
-### Тело
+### Body
 
 Required: `id`, `amount`, `currency`, `status`.
 
-| Поле | Тип | Описание |
+| Field | Type | Description |
 | --- | --- | --- |
-| `id` | uuid | ID транзакции |
+| `id` | uuid | transaction ID |
 | `amount` | number (float) | |
 | `currency` | string | |
-| `status` | string | enum схемы: `CONFIRMED`, `CANCELED`; проза также `CHARGEBACKED` |
-| `paymentMethod` | integer | ID метода оплаты (example `2`) |
-| `payload` | string | дополнительные данные |
+| `status` | string | schema enum: `CONFIRMED`, `CANCELED`; prose also `CHARGEBACKED` |
+| `paymentMethod` | integer | payment method ID (example `2`) |
+| `payload` | string | extra data |
 
-Регистр полей — **camelCase** (`id`, `amount`, `paymentMethod`).
+Field case is **camelCase** (`id`, `amount`, `paymentMethod`).
 
-Схема `CallbackPayload`: `additionalProperties: false`; required без `paymentMethod`; `paymentMethod` optional integer.
+`CallbackPayload` schema: `additionalProperties: false`; required without `paymentMethod`; `paymentMethod` optional integer.
 
-### Примеры (официальные)
+### Examples (official)
 
-Успех:
+Success:
 
 ```json
 {
@@ -85,7 +85,7 @@ Required: `id`, `amount`, `currency`, `status`.
 }
 ```
 
-Неуспех:
+Failure:
 
 ```json
 {
@@ -97,32 +97,32 @@ Required: `id`, `amount`, `currency`, `status`.
 }
 ```
 
-GitBook-пример без `payload`, те же четыре обязательных поля + `paymentMethod`.
+GitBook example has no `payload`, same four required fields + `paymentMethod`.
 
-Ожидаемый ответ мерчанта: `200`.
+Expected merchant response: `200`.
 
-## 2. Callback по списанию подписки
+## 2. Subscription charge callback
 
-«Приходит на каждое списание — успешное и неуспешное. Отличается от callback'а обычного платежа только двумя дополнительными полями: `SubscriptionId` и `NextChargeAt`.»
+"Arrives on every charge — success and failure. Differs from a regular payment callback only by two extra fields: `SubscriptionId` and `NextChargeAt`."
 
-Фактически схема использует **PascalCase** (`Id`, `Amount`, …) — это не «те же поля в camelCase».
+In practice the schema uses **PascalCase** (`Id`, `Amount`, …) — not "the same fields in camelCase".
 
-Заголовки `X-MerchantId`, `X-Secret` в OpenAPI этой ручки marked `required: false` (в отличие от платежного callback). Всё равно сверять, если пришли.
+Headers `X-MerchantId`, `X-Secret` are marked `required: false` in this endpoint's OpenAPI (unlike the payment callback). Still verify them if they arrive.
 
-### Тело (все поля required в схеме)
+### Body (all fields required in the schema)
 
-| Поле | Тип | Описание |
+| Field | Type | Description |
 | --- | --- | --- |
-| `Id` | string | ID **транзакции-списания** (новый на каждое списание) |
+| `Id` | string | **charge transaction** ID (new on every charge) |
 | `Amount` | integer | |
 | `Currency` | string | |
-| `Status` | `PaymentStatus` | `CONFIRMED` — деньги списаны, баланс пополнен (сумма за вычетом комиссии). `CANCELED` — списание не прошло: баланс не меняется, `NextChargeAt = null`, подписка → `PastDue`, провайдер **не** ретраит |
+| `Status` | `PaymentStatus` | `CONFIRMED` — funds charged, balance credited (amount minus fee). `CANCELED` — charge failed: balance unchanged, `NextChargeAt = null`, subscription → `PastDue`, provider does **not** retry |
 | `PaymentMethod` | integer | example `6` |
 | `Payload` | string | example `""` |
-| `SubscriptionId` | string | ID подписки |
-| `NextChargeAt` | string | ISO-8601 или `null` при CANCELED |
+| `SubscriptionId` | string | subscription ID |
+| `NextChargeAt` | string | ISO-8601 or `null` on CANCELED |
 
-### Примеры
+### Examples
 
 ```json
 {
@@ -150,26 +150,26 @@ GitBook-пример без `payload`, те же четыре обязатель
 }
 ```
 
-`CANCELED` по списанию ≠ отмена подписки мерчантом. Отмена подписки приходит отдельным callback статуса (`SUBSCRIPTION_CANCELLED`).
+Charge `CANCELED` ≠ merchant-cancelled subscription. Subscription cancel arrives as a separate status callback (`SUBSCRIPTION_CANCELLED`).
 
-## 3. Callback по статусу подписки
+## 3. Subscription status callback
 
-«Приходит при смене статуса. В нём `Id` = `SubscriptionId` (ID подписки, не транзакции).»
+"Arrives on status change. Here `Id` = `SubscriptionId` (subscription ID, not a transaction)."
 
-### Тело
+### Body
 
-Те же имена полей, что у списания (PascalCase). `Status` — `CallbackSubscriptionStatus`, не `PaymentStatus`.
+Same field names as the charge callback (PascalCase). `Status` is `CallbackSubscriptionStatus`, not `PaymentStatus`.
 
-| Status | Описание схемы |
+| Status | Schema description |
 | --- | --- |
-| `SUBSCRIPTION_ACTIVATED` | Подписка активна, списания по расписанию |
-| `SUBSCRIPTION_PAST_DUE` | Перманентный: из него нет переходов в другой статус, если нет вебхука об успешной оплате или отмене |
-| `SUBSCRIPTION_CANCELLED` | Переход из ACTIVATED или PAST_DUE — явная отмена мерчантом или плательщиком (ссылка отмены или API) |
-| `SUBSCRIPTION_FAILED` | Переход из ACTIVATED — невозможность привязки при первой активации (провайдер вернул ошибку или не подтвердил согласие) |
+| `SUBSCRIPTION_ACTIVATED` | Subscription is active, charges on schedule |
+| `SUBSCRIPTION_PAST_DUE` | Permanent: no transitions out unless there is a webhook of a successful payment or a cancel |
+| `SUBSCRIPTION_CANCELLED` | Transition from ACTIVATED or PAST_DUE — explicit cancel by merchant or payer (cancel link or API) |
+| `SUBSCRIPTION_FAILED` | Transition from ACTIVATED — bind failed on first activation (provider returned an error or did not confirm consent) |
 
-Проза create: если за 30 минут привязки нет — подписка `Failed`. Соотносить с `SUBSCRIPTION_FAILED` осторожно: схема FAILED описывает ошибку привязки «из ACTIVATED».
+Create prose: if there is no bind within 30 minutes — subscription `Failed`. Map to `SUBSCRIPTION_FAILED` carefully: the FAILED schema describes a bind error "from ACTIVATED".
 
-### Пример (официальный «confirmed»)
+### Example (official "confirmed")
 
 ```json
 {
@@ -184,25 +184,25 @@ GitBook-пример без `payload`, те же четыре обязатель
 }
 ```
 
-Второй example на той же странице — **чужой** camelCase платежный callback (`id`/`status: CANCELED`/`paymentMethod: 2`). Не использовать как образец статуса подписки; это конфликт внутри страницы.
+The second example on the same page is a **foreign** camelCase payment callback (`id`/`status: CANCELED`/`paymentMethod: 2`). Do not use it as a subscription-status sample; it is an in-page conflict.
 
-## Фейковый callback (GitBook + ЛК)
+## Fake callback (GitBook + cabinet)
 
-Страница GitBook: создать транзакцию **в личном кабинете**, нажать кнопку — откроется список доступных фейковых callback.
+GitBook page: create a transaction **in the merchant cabinet**, press the button — a list of available fake callbacks opens.
 
-- успех: **CONFIRMED** («Потдвержденно» — орфография источника)
-- неуспех: **CANCELED**
+- success: **CONFIRMED** ("Потдвержденно" — source spelling)
+- failure: **CANCELED**
 
-Официальный llms.txt эту страницу не включает; функциональность ЛК упоминается в задаче skill и в GitBook.
+Official llms.txt does not include this page; cabinet functionality is mentioned in the skill brief and in GitBook.
 
-## Реализация приёмника (ориентир)
+## Receiver implementation (guide)
 
 ```python
 import hmac
 from flask import Flask, request, abort
 
 app = Flask(__name__)
-MERCHANT_ID = "..."  # из env, не из репозитория
+MERCHANT_ID = "..."  # from env, not from the repo
 SECRET = "..."
 
 
@@ -216,8 +216,8 @@ def callback():
     ):
         abort(401)
     body = request.get_json(force=True, silent=False)
-    # camelCase платёж vs PascalCase подписка — смотри ключи
+    # camelCase payment vs PascalCase subscription — look at keys
     return "", 200
 ```
 
-Не логируй `X-Secret`. Идемпотентность: один и тот же callback может прийти повторно (ретраи).
+Do not log `X-Secret`. Idempotency: the same callback may arrive again (retries).

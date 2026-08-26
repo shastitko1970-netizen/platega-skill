@@ -1,9 +1,9 @@
 # Agents
 
-Это репозиторий справочного Agent Skill для [Platega.io](https://platega.io) API.
+Reference Agent Skill for the [Platega.io](https://platega.io) API.
 
-Перед любой работой с платежами, выплатами, подписками, callback, H2H, возвратами или HMAC прочитай skill целиком:
+Before any work on payments, payouts, subscriptions, callbacks, H2H, refunds, or HMAC, read the skill in full:
 
 - [skills/platega/SKILL.md](skills/platega/SKILL.md)
 
-Не выдумывай эндпоинты, поля и статусы. Источник истины — [docs.platega.io](https://docs.platega.io/) (последнее чтение: 2026-08-26). GitBook старше и конфликтует; если используешь его данные, пометь источник. Секреты (`X-Secret`, payout `SECRET`) не логировать и не коммитить.
+Do not invent endpoints, fields, or statuses. Source of truth: [docs.platega.io](https://docs.platega.io/) (last read: 2026-08-26). GitBook is older and conflicts; if you use it, mark the source. Never log or commit secrets (`X-Secret`, payout `SECRET`).

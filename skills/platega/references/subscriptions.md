@@ -1,69 +1,69 @@
-# Рекуррентные СБП-подписки
+# Recurrent SBP subscriptions
 
-Официальные страницы docs.platega.io (2026-08-26):
+Official docs.platega.io pages (2026-08-26):
 
-- [Создать подписку](https://docs.platega.io/создать-подписку-40029698e0.md)
-- [Получить подписку](https://docs.platega.io/получить-подписку-40029717e0.md)
-- [Список подписок](https://docs.platega.io/список-подписок-40029720e0.md)
-- [Отменить подписку](https://docs.platega.io/отменить-подписку-40029730e0.md)
-- Callback: [по списанию](https://docs.platega.io/callback-по-списанию-40029713e0.md), [по статусу](https://docs.platega.io/callback-по-статусу-подписки-40030962e0.md) — детали в [callbacks.md](callbacks.md)
-- Схемы: [SubscriptionStatus](https://docs.platega.io/subscriptionstatus-16438392d0.md), [SubscriptionInterval](https://docs.platega.io/subscriptioninterval-16441018d0.md), [CallbackSubscriptionStatus](https://docs.platega.io/callbacksubscriptionstatus-16438868d0.md)
+- [Create subscription](https://docs.platega.io/создать-подписку-40029698e0.md)
+- [Get subscription](https://docs.platega.io/получить-подписку-40029717e0.md)
+- [List subscriptions](https://docs.platega.io/список-подписок-40029720e0.md)
+- [Cancel subscription](https://docs.platega.io/отменить-подписку-40029730e0.md)
+- Callbacks: [charge](https://docs.platega.io/callback-по-списанию-40029713e0.md), [status](https://docs.platega.io/callback-по-статусу-подписки-40030962e0.md) — details in [callbacks.md](callbacks.md)
+- Schemas: [SubscriptionStatus](https://docs.platega.io/subscriptionstatus-16438392d0.md), [SubscriptionInterval](https://docs.platega.io/subscriptioninterval-16441018d0.md), [CallbackSubscriptionStatus](https://docs.platega.io/callbacksubscriptionstatus-16438868d0.md)
 
-Base: `https://app.platega.io/`  
+Base: `https://app.platega.io/`
 Auth: `X-MerchantId` + `X-Secret`.
 
-## Суть
+## Essence
 
-Подписка — регулярное автосписание с плательщика через СБП. Мерчант один раз создаёт подписку и отправляет плательщика на платёжную форму; привязку, активацию и все списания делает Platega, мерчанту приходят callback. Баланс пополняется по **каждому успешному списанию**.
+A subscription is a recurring auto-charge from the payer via SBP. The merchant creates the subscription once and sends the payer to the payment form; Platega does bind, activation, and all charges, and the merchant receives callbacks. Balance is credited on **every successful charge**.
 
-Плательщик на форме вводит email, подтверждает привязку счёта в банке (СБП/НСПК) — подписка становится `Active`. Дальше автоматически списывается `amount` каждый период. Мерчанту ничего вызывать не нужно.
+On the form the payer enters email and confirms account bind in the bank (SBP/NSPK) — the subscription becomes `Active`. Then `amount` is charged automatically each period. The merchant does not need to call anything.
 
-**Денежная транзакция на create не создаётся.** Транзакции появляются позже, по каждому списанию.
+**No money transaction is created on create.** Transactions appear later, on each charge.
 
-`paymentMethod` **всегда `6` (число, не строка)**. Значения `6` **нет** в схеме `PaymentMethodInt` (2, 3, 11–14).
+`paymentMethod` is **always `6` (number, not a string)**. Value `6` is **not** in schema `PaymentMethodInt` (2, 3, 11–14).
 
 ---
 
-## POST `/transaction/process` — создать подписку
+## POST `/transaction/process` — create subscription
 
-Тот же путь, что у платежа с методом. Отличие — тело.
+Same path as a payment with a method. Difference is the body.
 
 `operationId`: `createSubscription`
 
-### Заголовки
+### Headers
 
 `X-MerchantId`, `X-Secret` — required.
 
-### Тело
+### Body
 
-Required: `paymentMethod`, `paymentDetails`, `description`.  
-Поля `return` / `failedUrl` / `payload` / `metadata` в OpenAPI этой ручки **не** описаны.
+Required: `paymentMethod`, `paymentDetails`, `description`.
+Fields `return` / `failedUrl` / `payload` / `metadata` are **not** described in this endpoint's OpenAPI.
 
-| Поле | Тип | Required | Описание |
+| Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| `paymentMethod` | integer | да | Всегда `6` |
-| `paymentDetails.amount` | integer | да | Сумма одного регулярного списания |
-| `paymentDetails.currency` | string | да | Описание: `"RUB"` |
-| `paymentDetails.interval` | см. ниже | да | 1 — день, 2 — неделя, 3 — месяц, 4 — год |
-| `paymentDetails.intervalCount` | integer | да | Лимит зависит от interval: день до 31, неделя до 4, месяц до 12, год до 3 |
-| `description` | string | да | На форме и в email-уведомлениях |
+| `paymentMethod` | integer | yes | Always `6` |
+| `paymentDetails.amount` | integer | yes | Amount of one recurring charge |
+| `paymentDetails.currency` | string | yes | Description: `"RUB"` |
+| `paymentDetails.interval` | see below | yes | 1 — day, 2 — week, 3 — month, 4 — year |
+| `paymentDetails.intervalCount` | integer | yes | Limit depends on interval: day up to 31, week up to 4, month up to 12, year up to 3 |
+| `description` | string | yes | Shown on the form and in email notifications |
 
-#### Конфликт типа `interval`
+#### `interval` type conflict
 
-- Проза create: «1 — день, 2 — неделя, 3 — месяц, 4 — год»; example тела: `"interval": 3` (**integer**).
-- Схема `SubscriptionInterval`: `type: string`, enum `'1'`, `'2'`, `'3'`, `'4'`; у `'3'` description «30 дней».
+- Create prose: "1 — day, 2 — week, 3 — month, 4 — year"; body example: `"interval": 3` (**integer**).
+- Schema `SubscriptionInterval`: `type: string`, enum `'1'`, `'2'`, `'3'`, `'4'`; `'3'` description is "30 дней".
 
-Документируй оба. В рабочих примерах официальной страницы — число `3`.
+Document both. Working examples on the official page use number `3`.
 
-### Ответ 200
+### 200 response
 
 Required: `paymentMethod`, `transactionId`, `redirect`, `status`, `merchantId`.
 
-| Поле | Описание |
+| Field | Description |
 | --- | --- |
 | `paymentMethod` | Example: `Subscription` |
-| `transactionId` | **Это ID подписки (`subscriptionId`)**. Сохранить: по нему callback и остальные ручки |
-| `redirect` | Плательщика отправить **сразу**: на подтверждение привязки **30 минут**, затем подписка → `Failed` |
+| `transactionId` | **This is the subscription ID (`subscriptionId`)**. Store it: callbacks and other endpoints use it |
+| `redirect` | Send the payer **immediately**: **30 minutes** to confirm bind, then subscription → `Failed` |
 | `status` | Example: `PENDING` |
 | `merchantId` | UUID |
 
@@ -90,32 +90,32 @@ Required: `paymentMethod`, `transactionId`, `redirect`, `status`, `merchantId`.
 }
 ```
 
-### Ошибки
+### Errors
 
-`400` валидация, `401` аутентификация.
+`400` validation, `401` auth.
 
 ---
 
-## GET `/subscription/{subscriptionId}` — одна подписка
+## GET `/subscription/{subscriptionId}` — one subscription
 
 `operationId`: `getSubscription`
 
-### Параметры
+### Parameters
 
-| Имя | In | Required |
+| Name | In | Required |
 | --- | --- | --- |
-| `subscriptionId` | path | да |
-| `X-MerchantId` | header | да |
-| `X-Secret` | header | да |
+| `subscriptionId` | path | yes |
+| `X-MerchantId` | header | yes |
+| `X-Secret` | header | yes |
 
-### Ответ 200
+### 200 response
 
-Все перечисленные поля — required в схеме.
+All listed fields are required in the schema.
 
-| Поле | Тип | Example |
+| Field | Type | Example |
 | --- | --- | --- |
 | `id` | string | UUID |
-| `status` | string | `Active` (см. `SubscriptionStatus`) |
+| `status` | string | `Active` (see `SubscriptionStatus`) |
 | `amount` | integer | `100` |
 | `currencyCode` | string | `RUB` |
 | `intervalUnit` | string | `Month` |
@@ -126,11 +126,11 @@ Required: `paymentMethod`, `transactionId`, `redirect`, `status`, `merchantId`.
 | `description` | string | |
 | `createdAt` | string | |
 | `customerEmail` | string | |
-| `chargeMetrics` | object | required целиком |
+| `chargeMetrics` | object | required as a whole |
 
 `chargeMetrics`:
 
-| Поле | Тип |
+| Field | Type |
 | --- | --- |
 | `chargesTotal` | integer |
 | `chargesSuccess` | integer |
@@ -164,59 +164,59 @@ Required: `paymentMethod`, `transactionId`, `redirect`, `status`, `merchantId`.
 }
 ```
 
-### Ошибки
+### Errors
 
-`404` — «Транзакция не найдена» (текст OpenAPI; речь о подписке).
+`404` — "Transaction not found" (OpenAPI text; it means the subscription).
 
 ---
 
-## GET `/subscription` — список
+## GET `/subscription` — list
 
 `operationId`: `getSubscriptions`
 
 ### Query
 
-Все optional, примеры из OpenAPI:
+All optional, examples from OpenAPI:
 
-| Имя | Example |
+| Name | Example |
 | --- | --- |
-| `status` | `"1"` (строка; числовой смысл в схеме не расшифрован) |
+| `status` | `"1"` (string; numeric meaning is not decoded in the schema) |
 | `from` | `2026-07-01T00:00:00.000Z` |
 | `to` | `2026-07-31T23:59:59.999Z` |
 | `page` | `"1"` |
 | `size` | `"20"` |
 
-Плюс заголовки `X-MerchantId`, `X-Secret`.
+Plus headers `X-MerchantId`, `X-Secret`.
 
-### Ответ 200
+### 200 response
 
-| Поле | Тип |
+| Field | Type |
 | --- | --- |
 | `items` | array |
 | `total` | integer |
 | `page` | integer |
 | `size` | integer |
 
-Элемент `items` (все поля required в схеме):
+`items` element (all fields required in the schema):
 
-| Поле | Тип в схеме | Example |
+| Field | Schema type | Example |
 | --- | --- | --- |
 | `id` | string | |
 | `status` | **integer** | `4` |
 | `amount` | integer | `100` |
 | `currencyCode` | string | `RUB` |
-| `intervalUnit` | **integer** | `3` или `2` |
+| `intervalUnit` | **integer** | `3` or `2` |
 | `intervalCount` | integer | `1` |
-| `nextChargeAt` | null в схеме | `null` |
-| `lastChargeAt` | null в схеме | `null` |
+| `nextChargeAt` | null in schema | `null` |
+| `lastChargeAt` | null in schema | `null` |
 | `customerEmail` | string, nullable | `null` / email |
 | `description` | string | |
 | `chargesCount` | integer | `0` |
 | `createdAt` | string | |
 
-**Не угадывать** соответствие `status: 4` ↔ `SubscriptionStatus`. GET одной подписки возвращает строки (`Active`), список — integers. Официального маппинга в llms.txt нет.
+**Do not guess** the mapping `status: 4` ↔ `SubscriptionStatus`. GET one subscription returns strings (`Active`), the list returns integers. There is no official mapping in llms.txt.
 
-`intervalUnit: 3` согласуется с create `interval: 3` (месяц) и GET-one `intervalUnit: "Month"`, но это наблюдение по примерам, не отдельная схема.
+`intervalUnit: 3` matches create `interval: 3` (month) and GET-one `intervalUnit: "Month"`, but that is an observation from examples, not a separate schema.
 
 ```json
 {
@@ -242,28 +242,28 @@ Required: `paymentMethod`, `transactionId`, `redirect`, `status`, `merchantId`.
 }
 ```
 
-### Ошибки
+### Errors
 
-`404` — «Транзакция не найдена».
+`404` — "Transaction not found".
 
 ---
 
 ## POST `/subscription/{subscriptionId}/cancel`
 
-Отмена останавливает будущие списания. Ручка **идемпотентна**.
+Cancel stops future charges. The endpoint is **idempotent**.
 
-Плательщик может отменить сам по ссылке из email после каждого списания; мерчант узнаёт из callback `SUBSCRIPTION_CANCELLED`.
+The payer can cancel themselves via the link in the email after each charge; the merchant learns from callback `SUBSCRIPTION_CANCELLED`.
 
-### Параметры
+### Parameters
 
-`subscriptionId` path + `X-MerchantId` + `X-Secret`. Тела нет.
+`subscriptionId` path + `X-MerchantId` + `X-Secret`. No body.
 
-### Ответ 200
+### 200 response
 
-| Поле | Example |
+| Field | Example |
 | --- | --- |
 | `subscriptionId` | UUID |
-| `status` | `cancelled` (в example **lowercase**; схема `SubscriptionStatus` — `Cancelled`) |
+| `status` | `cancelled` (example is **lowercase**; schema `SubscriptionStatus` is `Cancelled`) |
 
 ```json
 {
@@ -272,29 +272,29 @@ Required: `paymentMethod`, `transactionId`, `redirect`, `status`, `merchantId`.
 }
 ```
 
-### Ошибки
+### Errors
 
-`400` валидация, `401` аутентификация.
+`400` validation, `401` auth.
 
 ---
 
-## Статусы подписки (`SubscriptionStatus`)
+## Subscription statuses (`SubscriptionStatus`)
 
-| Значение | Где встречается |
+| Value | Where seen |
 | --- | --- |
-| `PendingAgreement` | схема |
-| `Active` | схема + GET-one example |
-| `PastDue` | схема; после неуспешного списания (проза callback списания) |
-| `Cancelled` | схема |
-| `Failed` | схема; проза create: таймаут 30 мин привязки |
+| `PendingAgreement` | schema |
+| `Active` | schema + GET-one example |
+| `PastDue` | schema; after a failed charge (charge callback prose) |
+| `Cancelled` | schema |
+| `Failed` | schema; create prose: 30 min bind timeout |
 
-Callback-статусы — **другой** enum (`SUBSCRIPTION_ACTIVATED` и т.д.), см. [callbacks.md](callbacks.md) и [schemas.md](schemas.md).
+Callback statuses are a **different** enum (`SUBSCRIPTION_ACTIVATED` etc.), see [callbacks.md](callbacks.md) and [schemas.md](schemas.md).
 
-## Списания
+## Charges
 
-- Успех callback: `Status: CONFIRMED` — деньги списаны, баланс пополнен (сумма за вычетом комиссии).
-- Неуспех: `Status: CANCELED` — баланс не меняется, `NextChargeAt = null`, подписка → `PastDue`. **Провайдер не будет повторять попытки.**
-- `PaymentMethod` в callback списания: `6`.
-- Поля callback списания — **PascalCase** (`Id`, `Amount`, …) + `SubscriptionId` + `NextChargeAt`.
-- `Id` в callback списания — ID **транзакции-списания** (новый на каждое списание), не subscriptionId.
-- В callback статуса подписки `Id` = `SubscriptionId`.
+- Success callback: `Status: CONFIRMED` — funds charged, balance credited (amount minus fee).
+- Failure: `Status: CANCELED` — balance unchanged, `NextChargeAt = null`, subscription → `PastDue`. **The provider will not retry.**
+- `PaymentMethod` in the charge callback: `6`.
+- Charge callback fields are **PascalCase** (`Id`, `Amount`, …) + `SubscriptionId` + `NextChargeAt`.
+- `Id` in the charge callback is the **charge transaction** ID (new on every charge), not subscriptionId.
+- In the subscription status callback `Id` = `SubscriptionId`.

@@ -1,26 +1,26 @@
-# Выводы (Payout API) и сохранённые карты
+# Payouts (Payout API) and saved cards
 
-Официально (docs.platega.io, 2026-08-26):
+Official (docs.platega.io, 2026-08-26):
 
-- [Создаёт вывод на рублёвую карту через Payout API](https://docs.platega.io/создаёт-вывод-на-рублёвую-карту-через-payout-api-2232954m0.md)
-- [Получение сохранённых карт](https://docs.platega.io/получение-сохранённых-карт-39075563e0.md)
+- [Create a RUB card payout via Payout API](https://docs.platega.io/создаёт-вывод-на-рублёвую-карту-через-payout-api-2232954m0.md)
+- [List saved cards](https://docs.platega.io/получение-сохранённых-карт-39075563e0.md)
 
-Base URL в официальном Python-примере: `https://app.platega.io`
+Base URL in the official Python example: `https://app.platega.io`
 
-Функциональность **opt-in**: по умолчанию недоступна. Доступ выдаёт менеджер; после этого в ЛК появляется раздел **Payout API**.
+Functionality is **opt-in**: unavailable by default. Access is granted by the manager; then a **Payout API** section appears in the cabinet.
 
-Auth — **не** `X-MerchantId`/`X-Secret`, а отдельный HMAC. Полная модель: [auth.md](auth.md). CLI: [scripts/payout_sign.py](../scripts/payout_sign.py).
+Auth is **not** `X-MerchantId`/`X-Secret`, but a separate HMAC. Full model: [auth.md](auth.md). CLI: [scripts/payout_sign.py](../scripts/payout_sign.py).
 
 ---
 
-## Секрет
+## Secret
 
-- Отдельный SECRET (не платёжный `X-Secret`).
-- Показ один раз после генерации. Повторно не посмотреть.
-- Сброс в ЛК → код на email → новый ключ один раз. Старый ключ инвалидируется сразу.
-- Не логировать, не коммитить.
+- Separate SECRET (not the payments `X-Secret`).
+- Shown once after generation. Cannot be viewed again.
+- Reset in the cabinet → email code → new key shown once. Old key is invalidated immediately.
+- Do not log, do not commit.
 
-## Подпись
+## Signature
 
 ```
 string_to_sign = METHOD + "\n" + PATH + "\n" + timestamp + "\n" + idempotency-key + "\n" + sha256_hex(body)
@@ -28,23 +28,23 @@ sig            = Base64(HMAC-SHA256(SECRET, string_to_sign))
 Authorization  = PG-HMAC kid={MERCHANT_ID}, ts={timestamp}, sig={sig}
 ```
 
-- `timestamp` — unix seconds, окно сервера **±300 с**.
+- `timestamp` — unix seconds, server window **±300 s**.
 - `sha256_hex(body)` — hex **lowercase**.
-- Тело: `json.dumps(obj, separators=(",", ":")).encode("utf-8")`. Эти же байты в HTTP (`data=`, не `json=`).
+- Body: `json.dumps(obj, separators=(",", ":")).encode("utf-8")`. Same bytes in HTTP (`data=`, not `json=`).
 
-### POST вывода
+### POST payout
 
-`idempotency-key` — уникальная строка на каждый **новый** вывод (например UUID). Та же строка в заголовке `Idempotency-Key`. Повтор запроса с тем же ключом — идемпотентный retry. Новый ключ — второй вывод.
+`idempotency-key` — unique string for every **new** payout (e.g. UUID). Same string in header `Idempotency-Key`. Repeat with the same key — idempotent retry. New key — second payout.
 
-### GET карт
+### GET cards
 
-`idempotency-key` в строке подписи — **пустая строка**. Тело пустое, хеш:
+`idempotency-key` in the sign string is an **empty string**. Body is empty, hash:
 
 ```
 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 ```
 
-То есть:
+That is:
 
 ```
 GET
@@ -54,43 +54,43 @@ GET
 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 ```
 
-(пустая строка между timestamp и хешем).
+(empty line between timestamp and hash).
 
 ---
 
 ## POST `/api/v1/payouts/card-rub`
 
-Создаёт вывод на рублёвую карту.
+Creates a payout to a RUB card.
 
-### Заголовки
+### Headers
 
-| Заголовок | Обязательный | Пример |
+| Header | Required | Example |
 | --- | --- | --- |
-| `Authorization` | да | `PG-HMAC kid=29ef0000-..., ts=1719403200, sig=abc123==` |
-| `Idempotency-Key` | да | UUID |
-| `Content-Type` | да | `application/json` |
+| `Authorization` | yes | `PG-HMAC kid=29ef0000-..., ts=1719403200, sig=abc123==` |
+| `Idempotency-Key` | yes | UUID |
+| `Content-Type` | yes | `application/json` |
 
-### Тело
+### Body
 
-Передай **либо** `cardId` сохранённой карты, **либо** `cardNumber` полного PAN (XOR).
+Send **either** `cardId` of a saved card **or** `cardNumber` of a full PAN (XOR).
 
-Сумма одного вывода: **от 1000 до 87500 RUB**.
+Amount of one payout: **1000 to 87500 RUB**.
 
-| Поле | Тип | Обязательное | Описание |
+| Field | Type | Required | Description |
 | --- | --- | --- | --- |
-| `cardId` | string | нет | ID сохранённой карты (альтернатива `cardNumber`) |
-| `cardNumber` | string | нет | Номер карты получателя (16 цифр) |
-| `amountRub` | integer | да | Сумма вывода в рублях |
-| `payoutMethod` | string | да | Всегда `CARD` |
-| `currencyRequested` | string | да | Всегда `RUB` |
+| `cardId` | string | no | Saved card ID (alternative to `cardNumber`) |
+| `cardNumber` | string | no | Recipient card number (16 digits) |
+| `amountRub` | integer | yes | Payout amount in rubles |
+| `payoutMethod` | string | yes | Always `CARD` |
+| `currencyRequested` | string | yes | Always `RUB` |
 
 ```json
 {"cardNumber":"2200000000000000","amountRub":1500,"payoutMethod":"CARD","currencyRequested":"RUB"}
 ```
 
-(компактная сериализация без пробелов — именно её хешировать.)
+(compact serialization with no spaces — hash exactly that.)
 
-### Ответ (документированный example)
+### Response (documented example)
 
 ```json
 {
@@ -101,28 +101,28 @@ e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 }
 ```
 
-| Поле | Тип | Описание |
+| Field | Type | Description |
 | --- | --- | --- |
-| `withdrawalRecordId` | string | Идентификатор созданного вывода |
-| `status` | string | Сразу после создания — `CREATED`. Других значений страница не перечисляет |
-| `cardMasked` | string | Маскированный номер карты |
-| `amountUsdtDebited` | number | Сумма, списанная с USDT-баланса мерчанта |
+| `withdrawalRecordId` | string | Created payout ID |
+| `status` | string | Right after create — `CREATED`. The page lists no other values |
+| `cardMasked` | string | Masked card number |
+| `amountUsdtDebited` | number | Amount debited from the merchant USDT balance |
 
-HTTP-коды ошибок на странице не таблицированы. Сброшенный/неверный ключ: «ошибка аутентификации».
+HTTP error codes are not tabulated on the page. Reset/wrong key: "authentication error".
 
-### Официальный Python-фрагмент (смысл)
+### Official Python fragment (meaning)
 
 ```python
 import base64, hashlib, hmac, json, time, uuid, requests
 
-MERCHANT_ID = "ваш-merchant-id"
-SECRET      = "ваш-secret-ключ"
+MERCHANT_ID = "your-merchant-id"
+SECRET      = "your-secret-key"
 BASE        = "https://app.platega.io"
 PATH        = "/api/v1/payouts/card-rub"
 
 body = {
-    "cardNumber": "2200000000000000",  # или "cardId": "uuid сохранённой карты"
-    "amountRub": 1500,                 # от 1000 до 87500 RUB
+    "cardNumber": "2200000000000000",  # or "cardId": "saved-card-uuid"
+    "amountRub": 1500,                 # 1000 to 87500 RUB
     "payoutMethod": "CARD",
     "currencyRequested": "RUB",
 }
@@ -144,39 +144,39 @@ headers = {
     "Content-Type":    "application/json",
 }
 
-# Важно: data=body_bytes, не json=body
+# Important: data=body_bytes, not json=body
 resp = requests.post(BASE + PATH, headers=headers, data=body_bytes, timeout=30)
 ```
 
-Рабочий CLI без хардкода секретов: `python scripts/payout_sign.py --body '...'`.
+Working CLI without hardcoded secrets: `python scripts/payout_sign.py --body '...'`.
 
 ---
 
 ## GET `/api/v1/cards`
 
-По умолчанию только активные карты. `onlyActive=false` — также `DISABLED` и `PENDING`.
+By default only active cards. `onlyActive=false` — also `DISABLED` and `PENDING`.
 
-### Параметры
+### Parameters
 
-| Имя | In | Required | Описание |
+| Name | In | Required | Description |
 | --- | --- | --- | --- |
-| `onlyActive` | query | нет | По умолчанию можно не передавать. При `false` вернёт DISABLED и PENDING |
-| `Authorization` | header | да | `PG-HMAC kid=<merchantId>, ts=<unix_timestamp>, sig=<base64_signature>` |
+| `onlyActive` | query | no | Can be omitted by default. `false` also returns DISABLED and PENDING |
+| `Authorization` | header | yes | `PG-HMAC kid=<merchantId>, ts=<unix_timestamp>, sig=<base64_signature>` |
 
-Example query: `onlyActive=true` (строка).
+Example query: `onlyActive=true` (string).
 
-### Ответ 200
+### 200 response
 
-Массив объектов. Required поля каждого:
+Array of objects. Required fields of each:
 
-| Поле | Тип | Example |
+| Field | Type | Example |
 | --- | --- | --- |
 | `cardId` | string | UUID |
 | `masked` | string | `•••• •••• •••• 4242` |
 | `last4` | string | `4242` |
-| `brand` | string | `Visa` / во втором example `Запасная` |
+| `brand` | string | `Visa` / in the second example `Запасная` |
 | `label` | string | `Основная карта` / `""` |
-| `status` | string | `ACTIVE`, `DISABLED`; проза также упоминает `PENDING` |
+| `status` | string | `ACTIVE`, `DISABLED`; prose also mentions `PENDING` |
 
 ```json
 [
@@ -199,19 +199,19 @@ Example query: `onlyActive=true` (строка).
 ]
 ```
 
-Документированные статусы карт: `ACTIVE` (default-выдача), `DISABLED`, `PENDING`.
+Documented card statuses: `ACTIVE` (default listing), `DISABLED`, `PENDING`.
 
-### Подпись GET
+### GET signature
 
-Как в шапке файла: пустой idempotency-key, хеш пустого тела. Query `onlyActive` в официальной формуле string_to_sign **не** фигурирует: в подпись идёт `PATH` = `/api/v1/cards` (как написано в docs). Не добавлять query в PATH, если docs этого не требуют.
+As at the top of this file: empty idempotency-key, hash of empty body. Query `onlyActive` does **not** appear in the official string_to_sign formula: the signed `PATH` is `/api/v1/cards` (as written in docs). Do not add the query to PATH unless docs require it.
 
 ---
 
-## Ошибки и ловушки
+## Errors and traps
 
-- `json=` / pretty-print / другой порядок ключей после повторного dumps → неверная подпись.
-- `ts` старше/новее 300 с.
-- Повтор вывода с **новым** Idempotency-Key.
-- Смешение `X-Secret` платежей с payout SECRET.
-- `amountRub` вне 1000…87500.
-- Одновременно или ни `cardId`, ни `cardNumber` (нужен ровно один вариант — так сформулировано: «либо … либо»).
+- `json=` / pretty-print / different key order after a second dumps → bad signature.
+- `ts` older/newer than 300 s.
+- Repeating a payout with a **new** Idempotency-Key.
+- Mixing payments `X-Secret` with payout SECRET.
+- `amountRub` outside 1000…87500.
+- Both or neither of `cardId` and `cardNumber` (exactly one is required — phrased as "either … or").

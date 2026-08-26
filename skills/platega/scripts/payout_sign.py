@@ -2,7 +2,7 @@
 """HMAC-SHA256 signer for Platega Payout API.
 
 Matches the official Python sample from docs.platega.io
-(«Создаёт вывод на рублёвую карту через Payout API», read 2026-08-26).
+("Create a RUB card payout via Payout API", read 2026-08-26).
 
 Prints Authorization and, for POST, Idempotency-Key. Does not send the request
 unless --execute is passed. No secrets are hardcoded.

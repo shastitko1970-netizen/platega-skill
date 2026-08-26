@@ -11,122 +11,122 @@ metadata:
 
 # Platega.io API
 
-Справочный skill по merchant API Platega. Не выдумывай эндпоинты, поля и статусы. Если docs.platega.io и GitBook расходятся — документируй оба и помечай источник. Полные схемы — в `references/`.
+Reference skill for the Platega merchant API. Do not invent endpoints, fields, or statuses. If docs.platega.io and GitBook diverge, document both and mark the source. Full schemas live in `references/`.
 
-**Базовый URL (официально):** `https://app.platega.io/`
+**Base URL (official):** `https://app.platega.io/`
 
-`api.platega.io` встречался в неофициальных индексах (Context7) — не использовать по умолчанию.
+`api.platega.io` appeared in unofficial indexes (Context7) — do not use it by default.
 
-**Кабинет:** Настройки → `MerchantId`, `X-Secret`, Callback URLs. Payout API (отдельный SECRET) — opt-in через менеджера.
+**Merchant cabinet:** Settings → `MerchantId`, `X-Secret`, Callback URLs. Payout API (separate SECRET) is opt-in via the account manager.
 
-## Роутинг
+## Routing
 
-| Задача | Файл |
+| Task | File |
 | --- | --- |
-| `X-MerchantId` / `X-Secret`, HMAC payout, окна ts, секреты ЛК | [references/auth.md](references/auth.md) |
-| Создать платёж, статус, H2H QR, методы 2/3/11/12/13/14 | [references/payments.md](references/payments.md) |
-| Рекуррентные СБП-подписки (`paymentMethod: 6`) | [references/subscriptions.md](references/subscriptions.md) |
-| Callback платежа и подписки, фейковый callback | [references/callbacks.md](references/callbacks.md) |
+| `X-MerchantId` / `X-Secret`, HMAC payout, ts windows, cabinet secrets | [references/auth.md](references/auth.md) |
+| Create payment, status, H2H QR, methods 2/3/11/12/13/14 | [references/payments.md](references/payments.md) |
+| Recurrent SBP subscriptions (`paymentMethod: 6`) | [references/subscriptions.md](references/subscriptions.md) |
+| Payment and subscription callbacks, fake callback | [references/callbacks.md](references/callbacks.md) |
 | `cancel-supported` / `cancel` | [references/refunds.md](references/refunds.md) |
-| Вывод на карту, сохранённые карты, HMAC string_to_sign | [references/payouts.md](references/payouts.md) |
-| Баланс, CSV/Excel/JSON export; курсы и конвертации (legacy) | [references/reporting.md](references/reporting.md) |
-| CMS-модули и SDK | [references/cms-sdks.md](references/cms-sdks.md) |
-| GitBook: `id` клиента, методы 1–10, EXPIRED/FAILED, H2H-реквизиты | [references/legacy-gitbook.md](references/legacy-gitbook.md) |
-| OpenAPI-схемы полей | [references/schemas.md](references/schemas.md) |
-| CLI подписи payout | [scripts/payout_sign.py](scripts/payout_sign.py) |
+| Card payout, saved cards, HMAC string_to_sign | [references/payouts.md](references/payouts.md) |
+| Balance, CSV/Excel/JSON export; rates and conversions (legacy) | [references/reporting.md](references/reporting.md) |
+| CMS modules and SDKs | [references/cms-sdks.md](references/cms-sdks.md) |
+| GitBook: client `id`, methods 1–10, EXPIRED/FAILED, H2H requisites | [references/legacy-gitbook.md](references/legacy-gitbook.md) |
+| OpenAPI field schemas | [references/schemas.md](references/schemas.md) |
+| Payout signing CLI | [scripts/payout_sign.py](scripts/payout_sign.py) |
 
-## Авторизация (кратко)
+## Auth (short)
 
-Две разные модели. Не смешивать заголовки.
+Two different models. Do not mix headers.
 
-| Область | Как |
+| Scope | How |
 | --- | --- |
-| Платежи, статус, H2H, подписки, возвраты, баланс, export | Заголовки `X-MerchantId` + `X-Secret` из ЛК → Настройки |
-| Выводы + сохранённые карты | `Authorization: PG-HMAC kid={MERCHANT_ID}, ts={unix}, sig={b64}`. SECRET **отдельный**, одноразовый показ. Окно `ts` ±300 с. На POST вывода обязателен `Idempotency-Key` |
+| Payments, status, H2H, subscriptions, refunds, balance, export | Headers `X-MerchantId` + `X-Secret` from cabinet → Settings |
+| Payouts + saved cards | `Authorization: PG-HMAC kid={MERCHANT_ID}, ts={unix}, sig={b64}`. SECRET is **separate**, shown once. `ts` window ±300 s. POST payout requires `Idempotency-Key` |
 
-Подпись HMAC и точные строки — [references/auth.md](references/auth.md) и [references/payouts.md](references/payouts.md).
+HMAC signature and exact strings: [references/auth.md](references/auth.md) and [references/payouts.md](references/payouts.md).
 
-## Методы оплаты (текущий PaymentMethodInt)
+## Payment methods (current PaymentMethodInt)
 
-Официальная схема `PaymentMethodInt` (docs.platega.io):
+Official `PaymentMethodInt` schema (docs.platega.io):
 
-| Значение | Имя |
+| Value | Name |
 | --- | --- |
-| `2` | СБП (QR-код) / `SBPQR` |
-| `3` | ЕРИП |
-| `11` | Карточный эквайринг |
-| `12` | Международная оплата |
-| `13` | Криптовалюта (по умолчанию веб-пейформа; Telegram-бот — opt-in менеджера) |
+| `2` | SBP (QR code) / `SBPQR` |
+| `3` | ERIP |
+| `11` | Card acquiring |
+| `12` | International payment |
+| `13` | Cryptocurrency (web payform by default; Telegram bot is manager opt-in) |
 | `14` | Sberpay |
 
-`paymentMethod: 6` — **только подписки**. Его **нет** в enum `PaymentMethodInt`. GitBook-методы `10` CardRu / `1`–`9` P2P — [references/legacy-gitbook.md](references/legacy-gitbook.md).
+`paymentMethod: 6` is **subscriptions only**. It is **not** in the `PaymentMethodInt` enum. GitBook methods `10` CardRu / `1`–`9` P2P — [references/legacy-gitbook.md](references/legacy-gitbook.md).
 
-## Статусы платежа (текущий PaymentStatus)
+## Payment statuses (current PaymentStatus)
 
-Официально: `PENDING`, `CANCELED`, `CONFIRMED`, `CHARGEBACKED`.
+Official: `PENDING`, `CANCELED`, `CONFIRMED`, `CHARGEBACKED`.
 
-GitBook дополнительно: `EXPIRED`, `FAILED` — не считать текущей схемой.
+GitBook extras: `EXPIRED`, `FAILED` — not the current schema.
 
-В ответе статуса поля приходят как есть, включая опечатки `mechantId` и `comission` / `comissionUsdt` / `comissionType`.
+Status response fields come as-is, including typos `mechantId` and `comission` / `comissionUsdt` / `comissionType`.
 
-## Индекс эндпоинтов (официальный llms.txt)
+## Endpoint index (official llms.txt)
 
-Все пути относительно `https://app.platega.io`.
+All paths relative to `https://app.platega.io`.
 
-| Метод | Путь | Auth | Назначение |
+| Method | Path | Auth | Purpose |
 | --- | --- | --- | --- |
-| `POST` | `/transaction/process` | X-* | Платёж с `paymentMethod` **или** подписка (`6`) |
-| `POST` | `/v2/transaction/process` | X-* | Без метода; плательщик выбирает на hosted page; в ответе `url`, не `redirect` |
-| `GET` | `/transaction/{id}` | X-* | Статус платежа |
-| `GET` | `/h2h/{id}` | X-* | QR/ссылка H2H (включает менеджер) |
-| `POST` | `/transaction/export/csv` | X-* | Выгрузка → `{url}` |
-| `POST` | `/transaction/export/excel` | X-* | Выгрузка → `{url}` |
-| `POST` | `/transaction/export/json` | X-* | Массив записей (не `{url}`) |
-| `GET` | `/balance/all` | X-* | Балансы |
-| `GET` | `/transaction/{id}/cancel-supported` | X-* | Можно ли отменить |
-| `POST` | `/transaction/{id}/cancel` | X-* | Возврат |
-| `GET` | `/subscription/{subscriptionId}` | X-* | Одна подписка |
-| `GET` | `/subscription` | X-* | Список |
-| `POST` | `/subscription/{subscriptionId}/cancel` | X-* | Отмена подписки (идемпотентна) |
-| `POST` | `/api/v1/payouts/card-rub` | PG-HMAC | Вывод на карту RUB |
-| `GET` | `/api/v1/cards` | PG-HMAC | Сохранённые карты |
-| inbound POST | URL из ЛК Callback URLs | X-* на callback | Статус платежа / списание / статус подписки |
+| `POST` | `/transaction/process` | X-* | Payment with `paymentMethod` **or** subscription (`6`) |
+| `POST` | `/v2/transaction/process` | X-* | No method; payer picks on hosted page; response has `url`, not `redirect` |
+| `GET` | `/transaction/{id}` | X-* | Payment status |
+| `GET` | `/h2h/{id}` | X-* | H2H QR/link (manager enables) |
+| `POST` | `/transaction/export/csv` | X-* | Export → `{url}` |
+| `POST` | `/transaction/export/excel` | X-* | Export → `{url}` |
+| `POST` | `/transaction/export/json` | X-* | Array of records (not `{url}`) |
+| `GET` | `/balance/all` | X-* | Balances |
+| `GET` | `/transaction/{id}/cancel-supported` | X-* | Whether cancel is allowed |
+| `POST` | `/transaction/{id}/cancel` | X-* | Refund |
+| `GET` | `/subscription/{subscriptionId}` | X-* | One subscription |
+| `GET` | `/subscription` | X-* | List |
+| `POST` | `/subscription/{subscriptionId}/cancel` | X-* | Cancel subscription (idempotent) |
+| `POST` | `/api/v1/payouts/card-rub` | PG-HMAC | Payout to RUB card |
+| `GET` | `/api/v1/cards` | PG-HMAC | Saved cards |
+| inbound POST | URL from cabinet Callback URLs | X-* on callback | Payment status / charge / subscription status |
 
-Не в текущем llms.txt (помечать extra/legacy): `GET /rates/payment_method_rate`, `GET /transaction/balance-unlock-operations`. Страница конвертаций на docs 404.
+Not in current llms.txt (mark extra/legacy): `GET /rates/payment_method_rate`, `GET /transaction/balance-unlock-operations`. Conversions page on docs is 404.
 
-## Сценарии
+## Scenarios
 
-1. **Обычный платёж с методом.** `POST /transaction/process` с `paymentMethod` ∈ {2,3,11,12,13,14}. **Не передавай `id`.** Редирект плательщика на `redirect`. Жди callback или опрашивай `GET /transaction/{id}`.
-2. **Hosted page без метода.** `POST /v2/transaction/process` без `paymentMethod`. Редирект на `url`.
-3. **H2H.** Создать транзакцию → `GET /h2h/{id}` → `{amount, qr}` (текущие docs). H2H включает менеджер.
-4. **Подписка.** Тот же `POST /transaction/process`, но `paymentMethod: 6` + `interval` + `intervalCount`. `transactionId` = `subscriptionId`. Денег на create нет. 30 минут на привязку, иначе `Failed`. Callback списания: PascalCase + `SubscriptionId` + `NextChargeAt`.
-5. **Возврат.** `GET .../cancel-supported` (нужен баланс USDT или RUB) → `POST .../cancel`. Возможен `accepted: false` + `manualControlRequired: true`.
-6. **Вывод.** Opt-in. Подписать тело байт-в-байт (`separators=(",", ":")`), `data=` не `json=`. Новый `Idempotency-Key` на каждый новый вывод. `amountRub` 1000…87500. `cardId` XOR `cardNumber`.
+1. **Payment with a method.** `POST /transaction/process` with `paymentMethod` ∈ {2,3,11,12,13,14}. **Do not send `id`.** Redirect the payer to `redirect`. Wait for callback or poll `GET /transaction/{id}`.
+2. **Hosted page, no method.** `POST /v2/transaction/process` without `paymentMethod`. Redirect to `url`.
+3. **H2H.** Create transaction → `GET /h2h/{id}` → `{amount, qr}` (current docs). Manager enables H2H.
+4. **Subscription.** Same `POST /transaction/process`, but `paymentMethod: 6` + `interval` + `intervalCount`. `transactionId` = `subscriptionId`. No money on create. 30 minutes to bind, else `Failed`. Charge callback: PascalCase + `SubscriptionId` + `NextChargeAt`.
+5. **Refund.** `GET .../cancel-supported` (needs USDT or RUB balance) → `POST .../cancel`. Possible `accepted: false` + `manualControlRequired: true`.
+6. **Payout.** Opt-in. Sign the body byte-for-byte (`separators=(",", ":")`), `data=` not `json=`. New `Idempotency-Key` for every new payout. `amountRub` 1000…87500. `cardId` XOR `cardNumber`.
 
-## Никогда так не делать
+## Never do this
 
-1. Не передавай `id` при создании транзакции на текущем API — ID выдаёт система. GitBook-примеры с клиентским UUID устарели.
-2. Не доверяй callback без constant-time сравнения `X-MerchantId` и `X-Secret` (`hmac.compare_digest`). Подписи тела нет.
-3. Не переиспользуй `Idempotency-Key` для «повтора с другими данными» и не генерируй новый ключ, если хочешь идемпотентный retry того же вывода. Новый ключ = второй вывод.
-4. Не отправляй payout через `json=` / повторную сериализацию — байты разъедутся с подписью. Используй те же байты, что хешировал.
-5. Не путай `paymentMethod: 6` с таблицей `PaymentMethodInt` (2, 3, 11–14).
-6. Не «исправляй» поля ответа `mechantId` / `comission` — так их возвращает API.
-7. Не маппь export-фильтр `statuses: ['6','7']` на enum `PENDING`/`CONFIRMED`/… — официальный маппинг не опубликован.
-8. Не логируй и не коммить `X-Secret` и payout `SECRET`. Payout-ключ показывается один раз.
-9. Не ставь callback на HTTP, localhost, частные IP или self-signed сертификат.
-10. Не считай create подписки списанием: денег нет, окно привязки 30 минут; `CANCELED` по списанию → `PastDue`, провайдер **не** ретраит.
+1. Do not send `id` when creating a transaction on the current API — the system issues the ID. GitBook examples with a client UUID are stale.
+2. Do not trust a callback without constant-time compare of `X-MerchantId` and `X-Secret` (`hmac.compare_digest`). There is no body signature.
+3. Do not reuse `Idempotency-Key` for a "retry with different data", and do not generate a new key if you want an idempotent retry of the same payout. A new key = a second payout.
+4. Do not send payouts via `json=` / re-serialization — bytes will drift from the signature. Send the same bytes you hashed.
+5. Do not confuse `paymentMethod: 6` with the `PaymentMethodInt` table (2, 3, 11–14).
+6. Do not "fix" response fields `mechantId` / `comission` — that is how the API returns them.
+7. Do not map export filter `statuses: ['6','7']` onto enum `PENDING`/`CONFIRMED`/… — official mapping is unpublished.
+8. Do not log or commit `X-Secret` or payout `SECRET`. The payout key is shown once.
+9. Do not put the callback on HTTP, localhost, private IPs, or a self-signed certificate.
+10. Do not treat subscription create as a charge: no money, 30-minute bind window; charge `CANCELED` → `PastDue`, provider does **not** retry.
 
-## Кабинет (из docs)
+## Merchant cabinet (from docs)
 
-- Настройки: MerchantId, Secret, Callback URLs.
-- Фейковый callback: создать тестовую транзакцию в ЛК → кнопка списка фейковых callback.
-- Payout API: генерация/сброс ключа (код на email, показ один раз; сброс инвалидирует старый ключ).
-- Крипто `13`: веб-пейформа по умолчанию; Telegram-бот — менеджер.
-- Для части категорий магазинов обязателен `metadata.userId` (антифрод). Отсутствие при требовании отключает антифрод и может отключить магазин. В примерах также `metadata.clientIp`.
-- H2H и Payout API подключает менеджер.
+- Settings: MerchantId, Secret, Callback URLs.
+- Fake callback: create a test transaction in the cabinet → fake-callback list button.
+- Payout API: generate/reset key (email code, shown once; reset invalidates the old key).
+- Crypto `13`: web payform by default; Telegram bot — manager.
+- Some store categories require `metadata.userId` (antifraud). Missing it when required disables antifraud and may disable the store. Examples also include `metadata.clientIp`.
+- H2H and Payout API are enabled by the manager.
 
-## Источники
+## Sources
 
-- Официально: https://docs.platega.io/ и https://docs.platega.io/llms.txt (2026-08-26)
-- GitBook (старше): https://platega-io.gitbook.io/platega.io-api-dokumentaciya/
-- Спека skill: https://agentskills.io/specification
+- Official: https://docs.platega.io/ and https://docs.platega.io/llms.txt (2026-08-26)
+- GitBook (older): https://platega-io.gitbook.io/platega.io-api-dokumentaciya/
+- Skill spec: https://agentskills.io/specification

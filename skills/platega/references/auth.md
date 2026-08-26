@@ -1,31 +1,31 @@
-# Авторизация Platega
+# Platega auth
 
-Источник: [Авторизация](https://docs.platega.io/авторизация-1991638m0.md) (docs.platega.io, 2026-08-26). Payout HMAC: [Создаёт вывод на рублёвую карту](https://docs.platega.io/создаёт-вывод-на-рублёвую-карту-через-payout-api-2232954m0.md) и [Получение сохранённых карт](https://docs.platega.io/получение-сохранённых-карт-39075563e0.md).
+Source: [Authorization](https://docs.platega.io/авторизация-1991638m0.md) (docs.platega.io, 2026-08-26). Payout HMAC: [Create a RUB card payout](https://docs.platega.io/создаёт-вывод-на-рублёвую-карту-через-payout-api-2232954m0.md) and [List saved cards](https://docs.platega.io/получение-сохранённых-карт-39075563e0.md).
 
-GitBook-двойник (не противоречит по заголовкам платежей): [Аутентификация запроса](https://platega-io.gitbook.io/platega.io-api-dokumentaciya/api-docs/autentifikaciya-zaprosa.md).
+GitBook twin (does not conflict on payment headers): [Request authentication](https://platega-io.gitbook.io/platega.io-api-dokumentaciya/api-docs/autentifikaciya-zaprosa.md).
 
-## Базовый URL
+## Base URL
 
-Официально:
+Official:
 
 ```
 https://app.platega.io/
 ```
 
-Все запросы — **JSON** по **HTTPS**.
+All requests are **JSON** over **HTTPS**.
 
-Неофициально/конфликт: в сторонних индексах (Context7) встречался хост `api.platega.io`. По умолчанию использовать только `https://app.platega.io/`. Пример Payout в официальных docs тоже ходит на `https://app.platega.io`.
+Unofficial/conflict: third-party indexes (Context7) used host `api.platega.io`. By default use only `https://app.platega.io/`. Official payout examples also hit `https://app.platega.io`.
 
-## Модель 1 — платежи, отчёты, подписки, возвраты, баланс
+## Model 1 — payments, reports, subscriptions, refunds, balance
 
-Заголовки (оба обязательны):
+Headers (both required):
 
-| Key | Value | Где взять |
+| Key | Value | Where |
 | --- | --- | --- |
-| `X-MerchantId` | UUID мерчанта | ЛК → Настройки; также выдаёт менеджер при подключении |
-| `X-Secret` | API ключ мерчанта | ЛК → Настройки |
+| `X-MerchantId` | merchant UUID | cabinet → Settings; also issued by the manager on onboarding |
+| `X-Secret` | merchant API key | cabinet → Settings |
 
-Так авторизуются:
+Used by:
 
 - `POST /transaction/process`
 - `POST /v2/transaction/process`
@@ -37,49 +37,49 @@ https://app.platega.io/
 - `POST /transaction/{id}/cancel`
 - `GET /subscription`, `GET /subscription/{id}`, `POST /subscription/{id}/cancel`
 
-Пример:
+Example:
 
 ```http
 POST /transaction/process HTTP/1.1
 Host: app.platega.io
 Content-Type: application/json
 X-MerchantId: 1a021d91-9b26-4762-b303-5d4aac74e921
-X-Secret: <X-Secret из ЛК>
+X-Secret: <X-Secret from cabinet>
 ```
 
-Ошибки (как в OpenAPI платежей):
+Errors (as in payments OpenAPI):
 
-| HTTP | Смысл |
+| HTTP | Meaning |
 | --- | --- |
-| `401` | Ошибка аутентификации (проверьте `X-MerchantId` / `X-Secret`) |
-| `400` | Ошибка валидации запроса |
+| `401` | Auth error (check `X-MerchantId` / `X-Secret`) |
+| `400` | Request validation error |
 
-Не логировать и не коммитить `X-Secret`.
+Do not log or commit `X-Secret`.
 
-## Модель 2 — Payout API и сохранённые карты
+## Model 2 — Payout API and saved cards
 
-Отдельный контур. Подключается менеджером; после этого в ЛК появляется раздел **Payout API**.
+Separate contour. Enabled by the manager; then a **Payout API** section appears in the cabinet.
 
-- SECRET **другой**, не `X-Secret` платежей.
-- Ключ выдаётся в ЛК, хранится только у мерчанта: «Platega не имеет к нему доступа после выдачи».
-- Показывается **один раз** сразу после генерации. Повторно просмотреть нельзя.
-- Сброс: раздел Payout API, подтверждение кодом из email. Новый ключ тоже один раз. Сброс **немедленно** инвалидирует старый ключ — запросы со старой подписью начнут получать ошибку аутентификации.
+- SECRET is **different**, not the payments `X-Secret`.
+- Key is issued in the cabinet and stored only by the merchant: "Platega has no access to it after issuance."
+- Shown **once** right after generation. Cannot be viewed again.
+- Reset: Payout API section, confirm with an email code. New key also shown once. Reset **immediately** invalidates the old key — requests with the old signature start getting auth errors.
 
-### Заголовок
+### Header
 
 ```
 Authorization: PG-HMAC kid={MERCHANT_ID}, ts={unix}, sig={base64}
 ```
 
-- `kid` — тот же MerchantId (UUID).
-- `ts` — unix-время в секундах. Сервер принимает окно **±300 секунд**.
+- `kid` — same MerchantId (UUID).
+- `ts` — unix time in seconds. Server accepts a **±300 second** window.
 - `sig` — `Base64(HMAC-SHA256(SECRET, string_to_sign))`.
 
-На **записях вывода** обязателен заголовок `Idempotency-Key` (уникальная строка, например UUID). Та же строка входит в `string_to_sign`.
+On **payout writes**, header `Idempotency-Key` is required (unique string, e.g. UUID). The same string is part of `string_to_sign`.
 
 ### string_to_sign
 
-Элементы через `\n` (LF).
+Elements joined by `\n` (LF).
 
 **POST** `/api/v1/payouts/card-rub`:
 
@@ -91,14 +91,14 @@ idempotency-key
 sha256_hex(body)
 ```
 
-Пример каркаса:
+Skeleton:
 
 ```
 POST
 /api/v1/payouts/card-rub
 1719403200
 00000000-0000-0000-0000-446655440000
-<sha256 hex тела, строчные буквы>
+<sha256 hex of body, lowercase>
 ```
 
 **GET** `/api/v1/cards`:
@@ -107,47 +107,47 @@ POST
 METHOD
 PATH
 timestamp
-<пустая строка — idempotency-key не используется>
+<empty string — idempotency-key is unused>
 sha256_hex(empty)
 ```
 
-То есть между timestamp и хешем тела — пустая строка (два перевода `\n` подряд).
+So between timestamp and body hash there is an empty line (two consecutive `\n`).
 
-SHA-256 пустого тела (документированная константа):
+SHA-256 of empty body (documented constant):
 
 ```
 e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855
 ```
 
-`sha256_hex(body)` — hex **строчными** буквами. Тело сериализуется **без лишних пробелов** (`json.dumps(..., separators=(",", ":"))`). Те же байты идут и в подпись, и в HTTP-тело. Если клиент сериализует заново (`json=` в requests), подпись не сойдётся.
+`sha256_hex(body)` is hex in **lowercase**. Body is serialized **with no extra spaces** (`json.dumps(..., separators=(",", ":"))`). Those same bytes go into both the signature and the HTTP body. If the client re-serializes (`json=` in requests), the signature will not match.
 
-Готовый CLI: [scripts/payout_sign.py](../scripts/payout_sign.py).
+Ready CLI: [scripts/payout_sign.py](../scripts/payout_sign.py).
 
-### Заголовки POST вывода
+### POST payout headers
 
-| Заголовок | Обязательный | Пример |
+| Header | Required | Example |
 | --- | --- | --- |
-| `Authorization` | да | `PG-HMAC kid=29ef0000-..., ts=1719403200, sig=abc123==` |
-| `Idempotency-Key` | да | UUID |
-| `Content-Type` | да | `application/json` |
+| `Authorization` | yes | `PG-HMAC kid=29ef0000-..., ts=1719403200, sig=abc123==` |
+| `Idempotency-Key` | yes | UUID |
+| `Content-Type` | yes | `application/json` |
 
-### Заголовки GET карт
+### GET cards headers
 
-| Заголовок | Обязательный |
+| Header | Required |
 | --- | --- |
-| `Authorization` | да (`PG-HMAC ...`) |
+| `Authorization` | yes (`PG-HMAC ...`) |
 
-`X-MerchantId` / `X-Secret` для этих двух ручек **не** документированы как способ авторизации.
+`X-MerchantId` / `X-Secret` are **not** documented as auth for these two endpoints.
 
-## Callback (входящий)
+## Callback (inbound)
 
-Platega вызывает URL из ЛК (Настройки → Callback URLs) и сама присылает заголовки `X-MerchantId` + `X-Secret`. **Подписи тела нет.** Сверяй оба заголовка через `hmac.compare_digest` (constant-time), не через `==`.
+Platega calls the URL from the cabinet (Settings → Callback URLs) and itself sends headers `X-MerchantId` + `X-Secret`. **No body signature.** Compare both headers with `hmac.compare_digest` (constant-time), not `==`.
 
-Подробности: [callbacks.md](callbacks.md).
+Details: [callbacks.md](callbacks.md).
 
-## Практические правила
+## Practical rules
 
-- Платежный `X-Secret` и payout `SECRET` — разные ключи.
-- Не подставляй payout HMAC на `/transaction/*` и наоборот.
-- `ts` вне ±300 с → отказ, даже при верной подписи.
-- Новый `Idempotency-Key` = новый вывод. Повтор того же вывода — тот же ключ и то же тело.
+- Payments `X-Secret` and payout `SECRET` are different keys.
+- Do not put payout HMAC on `/transaction/*` or vice versa.
+- `ts` outside ±300 s → reject, even with a valid signature.
+- A new `Idempotency-Key` = a new payout. Retry the same payout with the same key and the same body.
