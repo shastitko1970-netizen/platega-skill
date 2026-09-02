@@ -1,6 +1,6 @@
 # Refunds (transaction cancel)
 
-Official (docs.platega.io, 2026-08-26):
+Official (docs.platega.io, re-read 2026-09-02, unchanged):
 
 - [Check whether a transaction can be cancelled](https://docs.platega.io/проверка-возможности-отмены-транзакции-38219023e0.md)
 - [Cancel a transaction](https://docs.platega.io/отмена-транзакции-38225949e0.md)

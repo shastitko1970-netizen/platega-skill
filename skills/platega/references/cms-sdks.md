@@ -1,6 +1,6 @@
 # CMS modules and SDKs
 
-Official (docs.platega.io, 2026-08-26):
+Official (docs.platega.io, re-read 2026-09-02, unchanged):
 
 - [CMS modules](https://docs.platega.io/модули-cms-1991884m0.md)
 - [SDK](https://docs.platega.io/sdk-1991993m0.md)

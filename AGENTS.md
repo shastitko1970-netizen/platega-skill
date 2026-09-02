@@ -6,4 +6,4 @@ Before any work on payments, payouts, subscriptions, callbacks, H2H, refunds, or
 
 - [skills/platega/SKILL.md](skills/platega/SKILL.md)
 
-Do not invent endpoints, fields, or statuses. Source of truth: [docs.platega.io](https://docs.platega.io/) (last read: 2026-08-26). GitBook is older and conflicts; if you use it, mark the source. Never log or commit secrets (`X-Secret`, payout `SECRET`).
+Do not invent endpoints, fields, or statuses. Source of truth: [docs.platega.io](https://docs.platega.io/) (last read: 2026-09-02). GitBook is older and conflicts; if you use it, mark the source. Never log or commit secrets (`X-Secret`, payout `SECRET`).

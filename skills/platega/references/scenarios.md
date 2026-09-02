@@ -41,13 +41,36 @@ Subscription create (`paymentMethod: 6`) OpenAPI does **not** describe `metadata
 
 ---
 
+## 1b. Merchant `orderId` vs system `id`
+
+**When:** you want to store your shop's order / invoice number on the Platega transaction.
+
+**Docs (create pages, modified 2026-09-01):** optional string `orderId` — "ID вашего внутреннего платежа".
+
+| Field | Who sets it | Send on create? |
+| --- | --- | --- |
+| `id` | Platega | **No.** System generates `transactionId`. GitBook client UUID is stale. |
+| `orderId` | You | **Optional.** Your internal payment id. |
+| `externalId` | Response on `GET /transaction/{id}` | Do not send. Docs do not say this is `orderId` echoed back. |
+
+Official examples still omit `orderId`. Shared schema `CreateTransactionRequest` still lacks it. Subscription create OpenAPI still lacks it.
+
+### Typical mistakes
+
+- Put the shop order number in `id` (old GitBook).
+- Skip `orderId` and invent a header or `payload` parser as the only correlation key.
+- Assume `orderId` is required (it is not).
+- Send `orderId` on subscription create because "payments have it" — not in that OpenAPI.
+
+---
+
 ## 2. H2H
 
 **When:** the merchant renders QR/requisites in their own UI, without hosted `pay.platega.io`. Docs: "If you want H2H — contact your manager."
 
 ### Current contract (docs.platega.io)
 
-1. Create a transaction: `POST /transaction/process` (usually `paymentMethod: 2`). **No `id`.**
+1. Create a transaction: `POST /transaction/process` (usually `paymentMethod: 2`). **No `id`.** Optional `orderId` is fine.
 2. Take `transactionId` from the response.
 3. `GET /h2h/{id}` with `X-MerchantId` + `X-Secret`.
 4. Response: `{ "amount": 136.12, "qr": "https://qr.nspk.ru/..." }`.
@@ -89,7 +112,7 @@ Same path as a method payment, different body:
 - `6` is a number, not a string. **Not** in `PaymentMethodInt`.
 - `interval`: prose 1 day / 2 week / 3 month / 4 year; example is integer `3`. Schema `SubscriptionInterval` is strings `'1'..'4'`. Official page examples use a number.
 - `intervalCount` caps: day ≤ 31, week ≤ 4, month ≤ 12, year ≤ 3.
-- Subscription-create OpenAPI does **not** describe `return` / `failedUrl` / `payload` / `metadata`.
+- Subscription-create OpenAPI does **not** describe `return` / `failedUrl` / `payload` / `metadata` / `orderId`.
 
 Response: `transactionId` **is** `subscriptionId`. Persist it. Send the payer to `redirect` **immediately**. Bind window is 30 minutes, then `Failed`.
 

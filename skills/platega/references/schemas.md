@@ -1,6 +1,6 @@
 # Schemas (official OpenAPI)
 
-docs.platega.io pages (2026-08-26):
+docs.platega.io pages (re-read 2026-09-02):
 
 - [PaymentStatus](https://docs.platega.io/paymentstatus-13226215d0.md)
 - [PaymentMethodInt](https://docs.platega.io/paymentmethodint-13226216d0.md)
@@ -66,6 +66,7 @@ Schema required: `paymentMethod`, `paymentDetails`.
 | `payload` | string | no | "Extra information for initialization in your system." |
 
 Field `metadata` is absent from **this** schema (it exists in create-endpoint OpenAPI).
+Field `orderId` is also absent from **this** schema as of 2026-09-02 (`additionalProperties: false`). Both create-endpoint pages added it on 2026-09-01: string, "ID of your internal payment", not in `required`. Follow the endpoint OpenAPI.
 Required set of `POST /transaction/process` (payment) is wider: + `description`, `return`, `failedUrl`.
 The schema does not cover subscriptions (`interval`, `paymentMethod: 6`).
 
@@ -208,3 +209,4 @@ Captured from endpoint pages (do not invent):
 | subscription charge callback | `Id`, `Amount`, `Currency`, `Status`, `PaymentMethod`, `Payload`, `SubscriptionId`, `NextChargeAt` |
 
 Create metadata (endpoints, not CreateTransactionRequest): `userId`, `userName`; example also has `clientIp`.
+Create `orderId` (endpoints since 2026-09-01, not CreateTransactionRequest): string, optional, your internal payment ID. Not documented as mapping to `externalId`.

@@ -1,6 +1,6 @@
 # Payouts (Payout API) and saved cards
 
-Official (docs.platega.io, 2026-08-26):
+Official (docs.platega.io, re-read 2026-09-02, unchanged):
 
 - [Create a RUB card payout via Payout API](https://docs.platega.io/создаёт-вывод-на-рублёвую-карту-через-payout-api-2232954m0.md)
 - [List saved cards](https://docs.platega.io/получение-сохранённых-карт-39075563e0.md)

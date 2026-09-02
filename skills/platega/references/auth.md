@@ -1,6 +1,6 @@
 # Platega auth
 
-Source: [Authorization](https://docs.platega.io/авторизация-1991638m0.md) (docs.platega.io, 2026-08-26). Payout HMAC: [Create a RUB card payout](https://docs.platega.io/создаёт-вывод-на-рублёвую-карту-через-payout-api-2232954m0.md) and [List saved cards](https://docs.platega.io/получение-сохранённых-карт-39075563e0.md).
+Source: [Authorization](https://docs.platega.io/авторизация-1991638m0.md) (docs.platega.io, re-read 2026-09-02, unchanged). Payout HMAC: [Create a RUB card payout](https://docs.platega.io/создаёт-вывод-на-рублёвую-карту-через-payout-api-2232954m0.md) and [List saved cards](https://docs.platega.io/получение-сохранённых-карт-39075563e0.md).
 
 GitBook twin (does not conflict on payment headers): [Request authentication](https://platega-io.gitbook.io/platega.io-api-dokumentaciya/api-docs/autentifikaciya-zaprosa.md).
 

@@ -1,6 +1,6 @@
 # Callbacks
 
-Official (docs.platega.io, 2026-08-26):
+Official (docs.platega.io, re-read 2026-09-02, unchanged):
 
 - [Callback on transaction status change](https://docs.platega.io/callback-об-изменении-статуса-транзакции-29209725e0.md)
 - [CallbackPayload](https://docs.platega.io/callbackpayload-13226220d0.md)

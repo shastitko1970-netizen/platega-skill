@@ -1,6 +1,6 @@
 # Why this skill: prompt → agent without it / with it
 
-These are not a recorded chat. They are worked examples of typical prompts. "Without skill" is assembled from real doc traps: the agent reads GitBook or invents a Stripe-like API. "With skill" is the docs.platega.io contract as of 2026-08-26.
+These are not a recorded chat. They are worked examples of typical prompts. "Without skill" is assembled from real doc traps: the agent reads GitBook or invents a Stripe-like API. "With skill" is the docs.platega.io contract as of 2026-09-02.
 
 If an agent without the skill already emits the right-hand request, you do not need the skill for that step. On Platega you almost always do: two doc layers, field typos, two auth models.
 
@@ -239,11 +239,49 @@ Retry of the same payout = same `--idempotency-key`. A new key = another 1500 RU
 
 ---
 
+## 6. Shop order number (`orderId`)
+
+**Prompt**
+
+> Create an SBP payment for 1500 RUB. My internal order id is `INV-8841`. I need to find this payment later by that id.
+
+### Without skill
+
+Puts `INV-8841` in `id` (GitBook) or invents `externalId` / `merchantOrderId` on create:
+
+```python
+body = {
+    "id": "INV-8841",                 # current API: do not send; not even a UUID
+    "paymentMethod": 2,
+    ...
+}
+```
+
+### With skill
+
+`id` is issued by Platega. Your number is optional `orderId` (create pages since 2026-09-01). Not required. Not documented as coming back as `externalId`.
+
+```python
+body = {
+    "paymentMethod": 2,
+    "paymentDetails": {"amount": 1500, "currency": "RUB"},
+    "description": "Invoice INV-8841",
+    "return": "https://shop.example/ok",
+    "failedUrl": "https://shop.example/fail",
+    "orderId": "INV-8841",
+    "metadata": {"userId": "80422110", "userName": "shop:80422110"},
+}
+```
+
+Correlate on the `transactionId` from the response; keep `orderId` in your DB. Subscription create OpenAPI still has no `orderId`.
+
+---
+
 ## What the skill changes in the agent's head
 
 | Topic | Without skill | With skill |
 | --- | --- | --- |
-| Create `id` | client UUID like GitBook | do not send |
+| Create `id` | client UUID / shop order like GitBook | do not send; optional `orderId` for your number |
 | SBP | method 10 / "P2P 1–9" | `2` |
 | Antifraud | `payload` or nothing | `metadata.userId` |
 | Hosted v2 | reads `redirect` | reads `url` |

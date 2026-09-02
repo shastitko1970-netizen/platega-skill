@@ -1,6 +1,6 @@
 # Reports, balances, rates
 
-Official in llms.txt (docs.platega.io, 2026-08-26):
+Official in llms.txt (docs.platega.io, re-read 2026-09-02, unchanged):
 
 - [Get balances](https://docs.platega.io/получение-балансов-33582950e0.md) — `GET /balance/all`
 - [Export transactions to CSV](https://docs.platega.io/выгрузка-транзакций-в-csv-37963792e0.md)

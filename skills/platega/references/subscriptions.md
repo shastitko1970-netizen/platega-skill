@@ -1,6 +1,6 @@
 # Recurrent SBP subscriptions
 
-Official docs.platega.io pages (2026-08-26):
+Official docs.platega.io pages (re-read 2026-09-02; no API change, create last modified 2026-08-25):
 
 - [Create subscription](https://docs.platega.io/создать-подписку-40029698e0.md)
 - [Get subscription](https://docs.platega.io/получить-подписку-40029717e0.md)

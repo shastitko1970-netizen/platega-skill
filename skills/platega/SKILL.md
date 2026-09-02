@@ -4,14 +4,14 @@ description: "Use when integrating or debugging the Platega payment API (platega
 license: MIT
 metadata:
   author: community
-  version: "1.1.0"
+  version: "1.2.0"
   source: "https://docs.platega.io/"
-  last_read: "2026-08-26"
+  last_read: "2026-09-02"
 ---
 
 # Platega.io API
 
-Reference skill for the Platega merchant API. Version **1.1.0**. Do not invent endpoints, fields, or statuses. If docs.platega.io and GitBook diverge, document both and mark the source. Full schemas live in `references/`.
+Reference skill for the Platega merchant API. Version **1.2.0**. Do not invent endpoints, fields, or statuses. If docs.platega.io and GitBook diverge, document both and mark the source. Full schemas live in `references/`.
 
 **Base URL (official):** `https://app.platega.io/`
 
@@ -100,7 +100,7 @@ Not in current llms.txt (mark extra/legacy): `GET /rates/payment_method_rate`, `
 
 Happy paths below. Edge cases (antifraud `metadata`, H2H, subscriptions) — [references/scenarios.md](references/scenarios.md). Prompt → agent with/without skill — [references/examples.md](references/examples.md).
 
-1. **Payment with a method.** `POST /transaction/process` with `paymentMethod` ∈ {2,3,11,12,13,14}. **Do not send `id`.** If the manager said this shop needs antifraud, send `metadata.userId` (+ `userName`) on create. Redirect the payer to `redirect`. Wait for callback or poll `GET /transaction/{id}`.
+1. **Payment with a method.** `POST /transaction/process` with `paymentMethod` ∈ {2,3,11,12,13,14}. **Do not send `id`.** Optional `orderId` is your internal payment id (added in docs 2026-09-01). If the manager said this shop needs antifraud, send `metadata.userId` (+ `userName`) on create. Redirect the payer to `redirect`. Wait for callback or poll `GET /transaction/{id}`.
 2. **Hosted page, no method.** `POST /v2/transaction/process` without `paymentMethod`. Redirect to `url` (not `redirect`).
 3. **H2H.** Manager enables the mode first. Create a transaction (usually SBP `2`) → `GET /h2h/{id}` → current docs: `{amount, qr}`. Do not expect GitBook card-requisite fields.
 4. **Subscription.** Same `POST /transaction/process`, but `paymentMethod: 6` + `interval` + `intervalCount`. `transactionId` = `subscriptionId`. No money on create. 30 minutes to bind, else `Failed`. Charge callback: PascalCase + `SubscriptionId` + `NextChargeAt`. Charge `CANCELED` → `PastDue`, provider does not retry.
@@ -109,7 +109,7 @@ Happy paths below. Edge cases (antifraud `metadata`, H2H, subscriptions) — [re
 
 ## Never do this
 
-1. Do not send `id` when creating a transaction on the current API — the system issues the ID. GitBook examples with a client UUID are stale.
+1. Do not send `id` when creating a transaction — the system issues the transaction ID. Your internal payment id is optional `orderId` (string), not `id`. GitBook examples with a client UUID in `id` are stale. Subscription create OpenAPI still does not list `orderId`.
 2. Do not trust a callback without constant-time compare of `X-MerchantId` and `X-Secret` (`hmac.compare_digest`). There is no body signature.
 3. Do not reuse `Idempotency-Key` for a "retry with different data", and do not generate a new key if you want an idempotent retry of the same payout. A new key = a second payout.
 4. Do not send payouts via `json=` / re-serialization — bytes will drift from the signature. Send the same bytes you hashed.
@@ -131,6 +131,6 @@ Happy paths below. Edge cases (antifraud `metadata`, H2H, subscriptions) — [re
 
 ## Sources
 
-- Official: https://docs.platega.io/ and https://docs.platega.io/llms.txt (2026-08-26)
+- Official: https://docs.platega.io/ and https://docs.platega.io/llms.txt (re-read 2026-09-02; create endpoints last modified 2026-09-01)
 - GitBook (older): https://platega-io.gitbook.io/platega.io-api-dokumentaciya/
 - Skill spec: https://agentskills.io/specification

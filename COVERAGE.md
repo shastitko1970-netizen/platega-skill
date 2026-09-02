@@ -1,7 +1,7 @@
 # Coverage: docs.platega.io/llms.txt
 
-Catalog source: `/workspace/platega-raw/llms.txt` and live https://docs.platega.io/llms.txt
-Read date: **2026-08-26**.
+Catalog source: live https://docs.platega.io/llms.txt
+Read dates: **2026-08-26** (initial), **2026-09-02** (full re-read; catalog still 31/31).
 
 Every official catalog row must have "yes" in Covered and a skill file that covers it.
 

@@ -2,11 +2,11 @@
 
 Неофициальный community skill для [Platega.io](https://platega.io) — платёжного API (СБП/QR, эквайринг, крипто, подписки, возвраты, HMAC-выводы).
 
-Версия skill: **1.1.0** ([CHANGELOG.md](CHANGELOG.md)).
+Версия skill: **1.2.0** ([CHANGELOG.md](CHANGELOG.md)).
 
 Skill написан в формате [Agent Skills](https://agentskills.io/specification): агент читает `skills/platega/SKILL.md`, затем точечно подгружает `references/*.md`. Это **справочный** skill (документация API), не дисциплинарный.
 
-**Источник истины:** [https://docs.platega.io/](https://docs.platega.io/) и [https://docs.platega.io/llms.txt](https://docs.platega.io/llms.txt). Последнее чтение: **2026-08-26**.
+**Источник истины:** [https://docs.platega.io/](https://docs.platega.io/) и [https://docs.platega.io/llms.txt](https://docs.platega.io/llms.txt). Последнее чтение: **2026-09-02**.
 
 **Дисклеймер.** Репозиторий неофициальный. Сверяй эндпоинты, поля и статусы с живыми docs перед продом. Секреты (`X-Secret`, payout `SECRET`) в репозиторий не входят и не должны попадать в логи/git.
 
@@ -17,7 +17,7 @@ Skill написан в формате [Agent Skills](https://agentskills.io/spe
 
 ## Why this skill / Зачем skill
 
-Platega has two doc layers (current Apidog and older GitBook) and they **disagree**: client `id` on create, methods 1–10 vs 2/3/11–14, H2H as card requisites vs QR, subscriptions as the same `POST /transaction/process` with `paymentMethod: 6`. An agent without the skill almost always mixes the layers.
+Platega has two doc layers (current Apidog and older GitBook) and they **disagree**: client `id` on create vs optional `orderId` (current, 2026-09-01), methods 1–10 vs 2/3/11–14, H2H as card requisites vs QR, subscriptions as the same `POST /transaction/process` with `paymentMethod: 6`. An agent without the skill almost always mixes the layers.
 
 Worked examples (prompt → without skill / with skill): [skills/platega/references/examples.md](skills/platega/references/examples.md).
 
@@ -114,7 +114,7 @@ skills/platega/
 
 ## English (install)
 
-Unofficial community **Agent Skill** for the [Platega.io](https://platega.io) merchant API. Source of truth: [docs.platega.io](https://docs.platega.io/), last read **2026-08-26**. Verify against live docs. Never commit `X-Secret` or the payout `SECRET`.
+Unofficial community **Agent Skill** for the [Platega.io](https://platega.io) merchant API. Source of truth: [docs.platega.io](https://docs.platega.io/), last read **2026-09-02**. Verify against live docs. Never commit `X-Secret` or the payout `SECRET`.
 
 ```bash
 npx skills add shastitko1970-netizen/platega-skill
